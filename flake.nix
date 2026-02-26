@@ -502,7 +502,7 @@
                 package = pkgs.nodejs_24;
                 yarn = {
                   enable = true;
-                  install.enable = true; # Use root workspace yarn.lock
+                  install.enable = false; # Per-app install in enterShell instead
                 };
               };
 
@@ -592,6 +592,14 @@
                 if [ "$(readlink env 2>/dev/null)" != "${pythonEnv}" ]; then
                   ln -sfn "${pythonEnv}" env
                 fi
+
+                # Install node dependencies for each app (like bench setup requirements)
+                for app_dir in apps/*/; do
+                  if [ -f "$app_dir/package.json" ] && [ ! -d "$app_dir/node_modules" ]; then
+                    echo "Installing node packages for $(basename $app_dir)..."
+                    (cd "$app_dir" && yarn install --frozen-lockfile --check-files 2>/dev/null || yarn install)
+                  fi
+                done
 
                 echo ""
                 echo "╔════════════════════════════════════════════════════════════╗"
