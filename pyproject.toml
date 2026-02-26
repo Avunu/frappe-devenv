@@ -1,0 +1,63 @@
+[project]
+name = "frappe-bench"
+version = "0.1.0"
+description = "Frappe Bench - Monorepo workspace for Frappe Development"
+requires-python = ">=3.12"
+readme = "README.md"
+
+# Root-level dependencies (tools used across the workspace)
+dependencies = [
+    "frappe-bench>=5.0.0",
+    "pre-commit>=4.5.1",
+    "pytest>=9.0.2",
+    "ruff>=0.15.0",
+    "setuptools>=80.10.2",
+]
+
+[tool.uv]
+# Use uv's workspace feature to manage all apps together
+# Mark this as a virtual package - no wheel will be built
+package = false
+# Packages that need setuptools as a build dependency but don't declare it
+extra-build-dependencies = { cairocffi = ["setuptools"] }
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pre-commit>=4.5.1",
+]
+
+[tool.uv.workspace]
+members = [
+    "apps/frappe",
+]
+
+[tool.uv.sources]
+# Link workspace members as editable installs
+frappe = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# This is a virtual package - workspace root only
+skip-excluded-dirs = true
+
+[tool.hatch.build.targets.wheel]
+# Minimal stub package for editable install compatibility
+packages = ["frappe_bench"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]  # Line length handled by formatter
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true

@@ -1,0 +1,17 @@
+{
+  "name": "frappe-bench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Frappe Bench - Monorepo workspace for Frappe Development",
+  "workspaces": [
+    "apps/frappe"
+  ],
+  "scripts": {
+    "build": "cd apps/frappe && yarn build",
+    "watch": "cd apps/frappe && yarn watch",
+    "production": "cd apps/frappe && yarn production"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
