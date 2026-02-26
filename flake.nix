@@ -423,7 +423,7 @@
           socketioEntrypoint = pkgs.writeShellScript "socketio-entrypoint" ''
             set -euo pipefail
 
-            export PATH="${pkgs.nodejs_22}/bin:${pkgs.coreutils}/bin:${pkgs.bashInteractive}/bin:$PATH"
+            export PATH="${pkgs.nodejs_24}/bin:${pkgs.coreutils}/bin:${pkgs.bashInteractive}/bin:$PATH"
 
             mkdir -p /bench/sites /bench/logs
 
@@ -499,7 +499,7 @@
               # ─────────────────────────────────────────────────────────────
               languages.javascript = {
                 enable = true;
-                package = pkgs.nodejs_22;
+                package = pkgs.nodejs_24;
                 yarn = {
                   enable = true;
                   install.enable = true; # Use root workspace yarn.lock
@@ -678,7 +678,7 @@
                 # SocketIO Server
                 socketio.exec = ''
                   rm -f "$DEVENV_STATE/sockets/socketio.sock"
-                  exec ${pkgs.nodejs_22}/bin/node apps/frappe/socketio.js
+                  exec ${pkgs.nodejs_24}/bin/node apps/frappe/socketio.js
                 '';
 
                 # File Watcher (for development auto-rebuild)
@@ -1045,7 +1045,7 @@
                   workingDir = "/bench";
                   entrypoint = [ socketioEntrypoint ];
                   startupCommand = [
-                    "${pkgs.nodejs_22}/bin/node"
+                    "${pkgs.nodejs_24}/bin/node"
                     "/bench/apps/frappe/socketio.js"
                   ];
                   copyToRoot = [
@@ -1055,7 +1055,7 @@
                         coreutils
                         bashInteractive
                         cacert
-                        nodejs_22
+                        nodejs_24
                       ];
                       pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
                     })
@@ -1067,7 +1067,7 @@
                         coreutils
                         bashInteractive
                         cacert
-                        nodejs_22
+                        nodejs_24
                       ];
                       maxLayers = 5;
                       reproducible = true;
@@ -1163,7 +1163,7 @@
                       name = "bench-root";
                       paths = containerRuntimeDeps ++ [
                         pythonEnv
-                        pkgs.nodejs_22 # needed for bench build
+                        pkgs.nodejs_24 # needed for bench build
                         pkgs.yarn      # needed for bench build
                       ];
                       pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
@@ -1172,7 +1172,7 @@
                   layers = [
                     {
                       deps = containerRuntimeDeps ++ [
-                        pkgs.nodejs_22
+                        pkgs.nodejs_24
                         pkgs.yarn
                       ];
                       maxLayers = 10;
