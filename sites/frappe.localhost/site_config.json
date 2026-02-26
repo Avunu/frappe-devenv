@@ -1,0 +1,7 @@
+{
+ "db_name": "_0edd63f3387bcb99",
+ "db_password": "6pXowDfwh6YQ8iRA",
+ "db_socket": "/run/user/1000/devenv-e910e66/mysql.sock",
+ "db_type": "mariadb",
+ "db_user": "_0edd63f3387bcb99"
+}
