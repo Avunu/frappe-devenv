@@ -696,15 +696,13 @@
                 web.depends_on = {
                   mysql.condition = "process_started";
                   redis.condition = "process_started";
-                  redis-queue.condition = "process_started";
-                  redis-socketio.condition = "process_started";
                 };
                 scheduler.depends_on.mysql.condition = "process_started";
                 worker.depends_on = {
                   mysql.condition = "process_started";
-                  redis-queue.condition = "process_started";
+                  redis.condition = "process_started";
                 };
-                socketio.depends_on.redis-socketio.condition = "process_started";
+                socketio.depends_on.redis.condition = "process_started";
                 watch.depends_on.web.condition = "process_started";
               };
 
