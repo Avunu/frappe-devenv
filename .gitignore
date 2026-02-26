@@ -13,6 +13,7 @@
 .mariadb_history
 .npm
 .python_history
+.venv
 .vscode-remote-containers
 .vscode-server
 .wget-hsts
@@ -28,7 +29,7 @@
 **/touched_tables.json
 chromium
 config/pids/*
-env/*
+env
 logs/*
 node_modules
 pequea_bench/
