@@ -2,7 +2,7 @@
 name = "frappe-bench-devenv"
 version = "0.1.0"
 description = "Frappe Bench - Monorepo workspace for Frappe Development"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 readme = "README.md"
 
 # Root-level dependencies (tools used across the workspace)
@@ -52,12 +52,12 @@ packages = ["wheel_target"]
 
 [tool.ruff]
 line-length = 110
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 ignore = ["E501"]  # Line length handled by formatter
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 ignore_missing_imports = true

@@ -82,7 +82,7 @@
           };
 
           # Python package set with uv2nix overlay
-          python = pkgs.python312;
+          python = pkgs.python314;
 
           pythonSet =
             (pkgs.callPackage pyproject-nix.build.packages {
@@ -143,8 +143,8 @@
                         "markdownify"
                         "marshmallow"
                         "matplotlib-inline"
-                        "maxminddb"
                         "maxminddb-geolite2"
+                        "maxminddb"
                         "monotonic"
                         "num2words"
                         "oauthlib"
@@ -165,8 +165,8 @@
                         "psutil"
                         "ptyprocess"
                         "pure-eval"
-                        "pyasn1"
                         "pyasn1-modules"
+                        "pyasn1"
                         "pycountry"
                         "pycryptodome"
                         "pydyf"
@@ -244,8 +244,9 @@
                       # mysqlclient needs mariadb headers
                       mysqlclient = prev.mysqlclient.overrideAttrs (old: {
                         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                          final.setuptools
                           pkgs.pkg-config
-                          pkgs.mariadb.dev
+                          pkgs.mariadb-connector-c
                         ];
                         buildInputs = (old.buildInputs or [ ]) ++ [
                           pkgs.mariadb.client
