@@ -5,7 +5,7 @@ requires-python = "==3.14.*"
 [manifest]
 members = [
     "frappe",
-    "frappe-bench",
+    "frappe-bench-devenv",
 ]
 
 [[package]]
@@ -732,9 +732,29 @@ provides-extras = ["dev", "test"]
 
 [[package]]
 name = "frappe-bench"
+version = "5.24.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "gitpython" },
+    { name = "honcho" },
+    { name = "jinja2" },
+    { name = "python-crontab" },
+    { name = "requests" },
+    { name = "semantic-version" },
+    { name = "setuptools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/26/46/e4e91c840282712e8a584b55e2fc06db1e23eea7f1b0f232af08c9730c60/frappe_bench-5.24.1.tar.gz", hash = "sha256:2cf4d527af7f3effba4ae888d2b5d0d2718fd02ebce6484df41c029e508a1750", size = 102081, upload-time = "2025-04-09T11:09:43.969Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/c6/5d460314959e7049db969a9c89511c3848bd1ab9c76b64bdd40e4cb490ba/frappe_bench-5.24.1-py3-none-any.whl", hash = "sha256:3f6fe30decb88d246812d1b79815e19b22c607247449eb99ca740228ceaed80e", size = 152008, upload-time = "2025-04-09T11:09:42.628Z" },
+]
+
+[[package]]
+name = "frappe-bench-devenv"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "frappe-bench" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "ruff" },
@@ -751,6 +771,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "frappe-bench", specifier = ">=5.0.0" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.0" },
@@ -925,6 +946,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/bc/1f/fb7375467e9adaa371cd617c2984fefe44bdce73add4c70b8dd8cab1b33a/hiredis-3.3.0-cp314-cp314t-musllinux_1_2_x86_64.whl", hash = "sha256:8e8a4b8540581dcd1b2b25827a54cfd538e0afeaa1a0e3ca87ad7126965981cc", size = 176127, upload-time = "2025-10-14T16:33:02.793Z" },
     { url = "https://files.pythonhosted.org/packages/66/14/0dc2b99209c400f3b8f24067273e9c3cb383d894e155830879108fb19e98/hiredis-3.3.0-cp314-cp314t-win32.whl", hash = "sha256:298593bb08487753b3afe6dc38bac2532e9bac8dcee8d992ef9977d539cc6776", size = 22024, upload-time = "2025-10-14T16:33:03.812Z" },
     { url = "https://files.pythonhosted.org/packages/b2/2f/8a0befeed8bbe142d5a6cf3b51e8cbe019c32a64a596b0ebcbc007a8f8f1/hiredis-3.3.0-cp314-cp314t-win_amd64.whl", hash = "sha256:b442b6ab038a6f3b5109874d2514c4edf389d8d8b553f10f12654548808683bc", size = 23808, upload-time = "2025-10-14T16:33:04.965Z" },
+]
+
+[[package]]
+name = "honcho"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/65/c8/d860888358bf5c8a6e7d78d1b508b59b0e255afd5655f243b8f65166dafd/honcho-2.0.0.tar.gz", hash = "sha256:af3815c03c634bf67d50f114253ea9fef72ecff26e4fd06b29234789ac5b8b2e", size = 45618, upload-time = "2024-10-06T14:26:53.871Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/1c/25631fc359955569e63f5446dbb7022c320edf9846cbe892ee5113433a7e/honcho-2.0.0-py3-none-any.whl", hash = "sha256:56dcd04fc72d362a4befb9303b1a1a812cba5da283526fbc6509be122918ddf3", size = 22093, upload-time = "2024-10-06T14:26:52.181Z" },
 ]
 
 [[package]]
@@ -1816,6 +1849,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d1/db/7ef3487e0fb0049ddb5ce41d3a49c235bf9ad299b6a25d5780a89f19230f/pytest-9.0.2.tar.gz", hash = "sha256:75186651a92bd89611d1d9fc20f0b4345fd827c41ccd5c299a868a05d70edf11", size = 1568901, upload-time = "2025-12-06T21:30:51.014Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl", hash = "sha256:711ffd45bf766d5264d487b917733b453d917afd2b0ad65223959f59089f875b", size = 374801, upload-time = "2025-12-06T21:30:49.154Z" },
+]
+
+[[package]]
+name = "python-crontab"
+version = "2.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/b0/c270a1b5c83d9e0f83ab654d3153c39d80f61ba49fefde50fd23ab351381/python-crontab-2.6.0.tar.gz", hash = "sha256:1e35ed7a3cdc3100545b43e196d34754e6551e7f95e4caebbe0e1c0ca41c2f1b", size = 55325, upload-time = "2021-10-19T20:50:03.837Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8a/65/ee4f4db956d14b42aa6cf0dbd0b77217a206484b99f1d4aa11326cd3952a/python_crontab-2.6.0-py3-none-any.whl", hash = "sha256:f308a64b8b1d072da4a235e9320398a242e92d080c1d8143bd0c600b24e160f8", size = 25807, upload-time = "2022-12-20T04:24:53.918Z" },
 ]
 
 [[package]]

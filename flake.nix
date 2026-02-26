@@ -556,6 +556,10 @@
                 FRAPPE_BENCH_ROOT = config.devenv.root;
                 SITES_PATH = config.devenv.root + "/sites";
 
+                # Prevent uv from creating a .venv in the project root.
+                # Point at a writable disposable dir (env/ is a read-only Nix store symlink).
+                UV_PROJECT_ENVIRONMENT = config.env.DEVENV_STATE + "/uv-env";
+
                 # PYTHONPATH: local apps override Nix store site-packages
                 # Makes Python resolve workspace modules from apps/ source
                 # instead of the Nix store (like editable installs).
