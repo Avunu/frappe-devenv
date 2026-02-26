@@ -7,7 +7,7 @@ readme = "README.md"
 
 # Root-level dependencies (tools used across the workspace)
 dependencies = [
-    "frappe-bench>=5.0.0",
+    "frappe-bench>=5.29.0",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
     "ruff>=0.15.0",
@@ -20,6 +20,9 @@ dependencies = [
 package = false
 # Packages that need setuptools as a build dependency but don't declare it
 extra-build-dependencies = { cairocffi = ["setuptools"] }
+# frappe-bench pins click<8.3, but frappe develop needs click~=8.3.1.
+# The bench code works fine with 8.3.x (_check_nested_chain exists), so override.
+override-dependencies = ["click~=8.3.1"]
 
 [dependency-groups]
 dev = [
