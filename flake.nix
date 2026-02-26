@@ -58,10 +58,10 @@
       ];
 
       systems = [
-        "x86_64-linux"
+        "aarch64-darwin"
         "aarch64-linux"
         "x86_64-darwin"
-        "aarch64-darwin"
+        "x86_64-linux"
       ];
 
       perSystem =
@@ -259,7 +259,7 @@
               );
 
           # Create the virtual environment with all workspace packages
-          pythonEnv = pythonSet.mkVirtualEnv "pequea-bench-env" workspace.deps.default;
+          pythonEnv = pythonSet.mkVirtualEnv "frappe-bench-env" workspace.deps.default;
 
           # Build PYTHONPATH from apps/ directories at Nix eval time.
           # This makes Python resolve workspace modules from local source
@@ -529,11 +529,11 @@
 
                 # Redis configuration (matching common_site_config.json)
                 FRAPPE_REDIS_CACHE = "redis://localhost:13000";
-                FRAPPE_REDIS_QUEUE = "redis://localhost:11000";
-                FRAPPE_REDIS_SOCKETIO = "redis://localhost:12000";
+                FRAPPE_REDIS_QUEUE = "redis://localhost:13000";
+                FRAPPE_REDIS_SOCKETIO = "redis://localhost:13000";
 
                 # Default site
-                FRAPPE_SITE = "pequea.avu.nu";
+                FRAPPE_SITE = "frappe.localhost";
 
                 # Ports
                 FRAPPE_WEBSERVER_PORT = "8000";
@@ -590,24 +590,24 @@
 
                 echo ""
                 echo "╔════════════════════════════════════════════════════════════╗"
-                echo "║         Pequea Frappe Bench Development Environment        ║"
+                echo "║         frappe Frappe Bench Development Environment        ║"
                 echo "╠════════════════════════════════════════════════════════════╣"
                 echo "║  Start all services:                                       ║"
                 echo "║    devenv up                                               ║"
                 echo "║                                                            ║"
-                echo "║  Default site: pequea.avu.nu                               ║"
+                echo "║  Default site: frappe.localhost                            ║"
                 echo "║                                                            ║"
                 echo "║  Common commands:                                          ║"
-                echo "║    bench --site pequea.avu.nu migrate                      ║"
-                echo "║    bench --site pequea.avu.nu console                      ║"
-                echo "║    bench --site pequea.avu.nu clear-cache                  ║"
+                echo "║    bench --site frappe.localhost migrate                   ║"
+                echo "║    bench --site frappe.localhost console                   ║"
+                echo "║    bench --site frappe.localhost clear-cache               ║"
                 echo "║    bench build                                             ║"
                 echo "╚════════════════════════════════════════════════════════════╝"
                 echo ""
-                echo "✅ Pequea bench environment ready!"
+                echo "✅ frappe bench environment ready!"
                 echo "   Python: ${pythonEnv}/bin/python"
                 echo "   Bench root: $PWD"
-                echo "   Site: pequea.avu.nu"
+                echo "   Site: frappe.localhost"
                 echo ""
                 echo "💡 Run 'devenv up' to start all services"
               '';
@@ -634,7 +634,7 @@
                   };
                 };
                 initialDatabases = [
-                  { name = "hpiruk"; } # Frappe site database
+                  { name = "frappe"; } # Frappe site database
                 ];
                 # ensureUsers = [
                 #   {
@@ -655,30 +655,6 @@
 
               # Additional Redis instances and Frappe processes
               processes = {
-                # Redis Queue (separate instance)
-                redis-queue.exec = ''
-                  exec ${pkgs.redis}/bin/redis-server \
-                    --port 11000 \
-                    --bind 127.0.0.1 \
-                    --dir "$PWD/sites" \
-                    --dbfilename queue.rdb \
-                    --save 900 1 \
-                    --save 300 10 \
-                    --save 60 10000 \
-                    --appendonly no
-                '';
-
-                # Redis SocketIO (separate instance)
-                redis-socketio.exec = ''
-                  exec ${pkgs.redis}/bin/redis-server \
-                    --port 12000 \
-                    --bind 127.0.0.1 \
-                    --dir "$PWD/sites" \
-                    --dbfilename socketio.rdb \
-                    --save "" \
-                    --appendonly no
-                '';
-
                 # Frappe Web Server
                 web.exec = ''
                   exec ${pythonEnv}/bin/bench serve --port 8000
@@ -736,15 +712,15 @@
               # ─────────────────────────────────────────────────────────────
               scripts = {
                 bench-console.exec = ''
-                  bench --site pequea.avu.nu console
+                  bench --site frappe.localhost console
                 '';
 
                 bench-migrate.exec = ''
-                  bench --site pequea.avu.nu migrate
+                  bench --site frappe.localhost migrate
                 '';
 
                 bench-clear-cache.exec = ''
-                  bench --site pequea.avu.nu clear-cache
+                  bench --site frappe.localhost clear-cache
                 '';
 
                 bench-build.exec = ''
@@ -800,7 +776,7 @@
               #
               # Usage:
               #   devenv container web build
-              #   devenv container web copy docker-daemon:pequea/web:latest
+              #   devenv container web copy docker-daemon:frappe/web:latest
               #   devenv container web run
               #
               # All containers expect these environment variables at runtime:
@@ -827,7 +803,7 @@
                 #   GUNICORN_TIMEOUT (default: 120)
                 # ═══════════════════════════════════════════════════════════
                 web = {
-                  name = "pequea/web";
+                  name = "frappe/web";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench/sites";
@@ -881,7 +857,7 @@
                 # Mount: /bench/sites
                 # ═══════════════════════════════════════════════════════════
                 scheduler = {
-                  name = "pequea/scheduler";
+                  name = "frappe/scheduler";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench/sites";
@@ -924,7 +900,7 @@
                 # Mount: /bench/sites
                 # ═══════════════════════════════════════════════════════════
                 worker-default = {
-                  name = "pequea/worker-default";
+                  name = "frappe/worker-default";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench/sites";
@@ -968,7 +944,7 @@
                 # Mount: /bench/sites
                 # ═══════════════════════════════════════════════════════════
                 worker-short = {
-                  name = "pequea/worker-short";
+                  name = "frappe/worker-short";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench/sites";
@@ -1013,7 +989,7 @@
                 # Mount: /bench/sites
                 # ═══════════════════════════════════════════════════════════
                 worker-long = {
-                  name = "pequea/worker-long";
+                  name = "frappe/worker-long";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench/sites";
@@ -1060,7 +1036,7 @@
                 #   FRAPPE_SOCKETIO_PORT (default: 9000)
                 # ═══════════════════════════════════════════════════════════
                 socketio = {
-                  name = "pequea/socketio";
+                  name = "frappe/socketio";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench";
@@ -1116,10 +1092,10 @@
                 #   FRAPPE_WEB_PORT (default: 8000)
                 #   FRAPPE_SOCKETIO_HOST (default: socketio)
                 #   FRAPPE_SOCKETIO_PORT (default: 9000)
-                #   FRAPPE_DEFAULT_SITE (default: pequea.avu.nu)
+                #   FRAPPE_DEFAULT_SITE (default: frappe.localhost)
                 # ═══════════════════════════════════════════════════════════
                 nginx = {
-                  name = "pequea/nginx";
+                  name = "frappe/nginx";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench";
@@ -1167,10 +1143,10 @@
                 #
                 # Not a long-running service. Use with:
                 #   docker run --rm -v sites:/bench/sites \
-                #     pequea/bench:latest bench --site X migrate
+                #     frappe/bench:latest bench --site X migrate
                 # ═══════════════════════════════════════════════════════════
                 bench = {
-                  name = "pequea/bench";
+                  name = "frappe/bench";
                   version = "latest";
                   registry = "docker-daemon:";
                   workingDir = "/bench/sites";
