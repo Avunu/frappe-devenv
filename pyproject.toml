@@ -1,5 +1,5 @@
 [project]
-name = "frappe-bench"
+name = "frappe-bench-devenv"
 version = "0.1.0"
 description = "Frappe Bench - Monorepo workspace for Frappe Development"
 requires-python = ">=3.12"
@@ -7,7 +7,7 @@ readme = "README.md"
 
 # Root-level dependencies (tools used across the workspace)
 dependencies = [
-    # "frappe-bench>=5.0.0", --- IGNORE ---
+    "frappe-bench>=5.0.0",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",
     "ruff>=0.15.0",
@@ -48,7 +48,7 @@ skip-excluded-dirs = true
 
 [tool.hatch.build.targets.wheel]
 # Minimal stub package for editable install compatibility
-packages = ["frappe_bench"]
+packages = ["wheel_target"]
 
 [tool.ruff]
 line-length = 110
