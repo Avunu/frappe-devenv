@@ -3,3 +3,8 @@
 	url = https://github.com/frappe/frappe.git
 	branch = version-16
 	shallow = true
+
+[submodule "apps/monkeyscript"]
+	path = apps/monkeyscript
+	branch = main
+	shallow = true

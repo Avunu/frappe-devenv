@@ -35,6 +35,7 @@ dev = [
 [tool.uv.workspace]
 members = [
     "apps/frappe",
+    "apps/monkeyscript",
 ]
 
 [tool.uv.sources]

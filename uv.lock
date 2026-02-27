@@ -6,6 +6,7 @@ requires-python = "==3.14.*"
 members = [
     "frappe",
     "frappe-bench-devenv",
+    "monkeyscript",
 ]
 overrides = [{ name = "click", specifier = "~=8.3.1" }]
 
@@ -1224,6 +1225,10 @@ sdist = { url = "https://files.pythonhosted.org/packages/c7/74/97e72a36efd4ae2bc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/af/33/ee4519fa02ed11a94aef9559552f3b17bb863f2ecfe1a35dc7f548cde231/matplotlib_inline-0.2.1-py3-none-any.whl", hash = "sha256:d56ce5156ba6085e00a9d54fead6ed29a9c47e215cd1bba2e976ef39f5710a76", size = 9516, upload-time = "2025-10-23T09:00:20.675Z" },
 ]
+
+[[package]]
+name = "monkeyscript"
+source = { editable = "apps/monkeyscript" }
 
 [[package]]
 name = "more-itertools"

@@ -579,12 +579,6 @@
               # Shell Initialization
               # ─────────────────────────────────────────────────────────────
               enterShell = ''
-                # Initialize git submodules if needed
-                if git submodule status 2>/dev/null | grep -q '^-'; then
-                  echo "Initializing git submodules..."
-                  git submodule update --init --recursive
-                fi
-
                 # Create required directories
                 mkdir -p "$DEVENV_STATE/mariadb" "$DEVENV_STATE/sockets" logs config/pids
 
