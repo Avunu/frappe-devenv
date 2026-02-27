@@ -260,7 +260,15 @@
               );
 
           # Create the virtual environment with all workspace packages
-          pythonEnv = pythonSet.mkVirtualEnv "frappe-bench-env" workspace.deps.default;
+          pythonEnv = pythonSet.mkVirtualEnv "frappe-bench-env" (
+            workspace.deps.default
+            // {
+              frappe = workspace.deps.default.frappe ++ [
+                "dev"
+                "test"
+              ];
+            }
+          );
 
           # Build PYTHONPATH from apps/ directories at Nix eval time.
           # This makes Python resolve workspace modules from local source
@@ -648,7 +656,7 @@
                 #     name = "frappe-root";
                 #     password = "123";
                 #     ensurePermissions = {
-                #       "*.*" = "ALL PRIVILEGES"; 
+                #       "*.*" = "ALL PRIVILEGES";
                 #     };
                 #   }
                 # ];
@@ -815,23 +823,37 @@
                   entrypoint = [ containerEntrypoint ];
                   startupCommand = [
                     "${pythonEnv}/bin/gunicorn"
-                    "--bind" "0.0.0.0:8000"
-                    "--workers" "4"
-                    "--max-requests" "5000"
-                    "--max-requests-jitter" "500"
-                    "--timeout" "120"
+                    "--bind"
+                    "0.0.0.0:8000"
+                    "--workers"
+                    "4"
+                    "--max-requests"
+                    "5000"
+                    "--max-requests-jitter"
+                    "500"
+                    "--timeout"
+                    "120"
                     "--preload"
-                    "--graceful-timeout" "30"
-                    "--keep-alive" "5"
-                    "--access-logfile" "-"
-                    "--error-logfile" "-"
+                    "--graceful-timeout"
+                    "30"
+                    "--keep-alive"
+                    "5"
+                    "--access-logfile"
+                    "-"
+                    "--error-logfile"
+                    "-"
                     "frappe.app:application"
                   ];
                   copyToRoot = [
                     (pkgs.buildEnv {
                       name = "bench-root";
                       paths = containerRuntimeDeps ++ [ pythonEnv ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -875,7 +897,12 @@
                     (pkgs.buildEnv {
                       name = "bench-root";
                       paths = containerRuntimeDeps ++ [ pythonEnv ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -913,13 +940,19 @@
                   startupCommand = [
                     "${pythonEnv}/bin/bench"
                     "worker"
-                    "--queue" "default"
+                    "--queue"
+                    "default"
                   ];
                   copyToRoot = [
                     (pkgs.buildEnv {
                       name = "bench-root";
                       paths = containerRuntimeDeps ++ [ pythonEnv ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -957,13 +990,19 @@
                   startupCommand = [
                     "${pythonEnv}/bin/bench"
                     "worker"
-                    "--queue" "short"
+                    "--queue"
+                    "short"
                   ];
                   copyToRoot = [
                     (pkgs.buildEnv {
                       name = "bench-root";
                       paths = containerRuntimeDeps ++ [ pythonEnv ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -1002,13 +1041,19 @@
                   startupCommand = [
                     "${pythonEnv}/bin/bench"
                     "worker"
-                    "--queue" "long"
+                    "--queue"
+                    "long"
                   ];
                   copyToRoot = [
                     (pkgs.buildEnv {
                       name = "bench-root";
                       paths = containerRuntimeDeps ++ [ pythonEnv ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -1059,7 +1104,12 @@
                         cacert
                         nodejs_24
                       ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -1107,8 +1157,10 @@
                   entrypoint = [ nginxEntrypoint ];
                   startupCommand = [
                     "${pkgs.nginx}/bin/nginx"
-                    "-c" "/bench/config/nginx.conf"
-                    "-g" "daemon off;"
+                    "-c"
+                    "/bench/config/nginx.conf"
+                    "-g"
+                    "daemon off;"
                   ];
                   copyToRoot = [
                     (pkgs.buildEnv {
@@ -1118,7 +1170,12 @@
                         bashInteractive
                         nginx
                       ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [
@@ -1166,9 +1223,14 @@
                       paths = containerRuntimeDeps ++ [
                         pythonEnv
                         pkgs.nodejs_24 # needed for bench build
-                        pkgs.yarn      # needed for bench build
+                        pkgs.yarn # needed for bench build
                       ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                   ];
                   layers = [

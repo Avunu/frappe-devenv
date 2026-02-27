@@ -1,7 +1,7 @@
 [submodule "apps/frappe"]
 	path = apps/frappe
 	url = https://github.com/frappe/frappe.git
-	branch = version-16
+	branch = develop
 	shallow = true
 
 [submodule "apps/monkeyscript"]

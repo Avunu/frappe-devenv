@@ -769,6 +769,7 @@ dev = [
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pytest" },
+    { name = "responses" },
     { name = "ruff" },
 ]
 
@@ -786,6 +787,7 @@ dev = [
     { name = "mypy" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pytest" },
+    { name = "responses" },
     { name = "ruff" },
 ]
 

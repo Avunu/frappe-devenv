@@ -30,6 +30,7 @@ dev = [
     "mypy",
     "pytest",
     "pre-commit>=4.5.1",
+    "responses",
 ]
 
 [tool.uv.workspace]
