@@ -797,6 +797,9 @@
 
                   INPUT="$1"
 
+                  # ensure we're in the bench root directory
+                  cd "$FRAPPE_BENCH_ROOT"
+
                   # Convert GitHub alias to full URL
                   if [[ "$INPUT" == */* ]] && [[ "$INPUT" != *://* ]]; then
                     URL="https://github.com/$INPUT.git"
@@ -825,7 +828,7 @@
 
                   echo "Adding $APP_NAME to sites/apps.txt..."
                   # Add to apps.txt if not already present
-                    if ! grep -q "^$APP_NAME$" sites/apps.txt; then
+                  if ! grep -q "^$APP_NAME$" sites/apps.txt; then
                     echo "" >> sites/apps.txt
                     echo "$APP_NAME" >> sites/apps.txt
                   fi
