@@ -777,6 +777,70 @@
                   yarn install
                   echo "Done! Restart your shell to pick up changes."
                 '';
+
+                # Add a new Frappe app from git URL or GitHub alias
+                # Usage: bench-get-app <url-or-alias>
+                # Examples:
+                #   bench-get-app frappe/payments
+                #   bench-get-app https://github.com/frappe/payments.git
+                bench-get-app.exec = ''
+                  if [ -z "$1" ]; then
+                    echo "Usage: bench-get-app <url-or-alias>"
+                    echo ""
+                    echo "Adds a Frappe app as a git submodule and integrates it into the workspace."
+                    echo ""
+                    echo "Examples:"
+                    echo "  bench-get-app frappe/payments"
+                    echo "  bench-get-app https://github.com/frappe/payments.git"
+                    exit 1
+                  fi
+
+                  INPUT="$1"
+
+                  # Convert GitHub alias to full URL
+                  if [[ "$INPUT" == */* ]] && [[ "$INPUT" != *://* ]]; then
+                    URL="https://github.com/$INPUT.git"
+                  else
+                    URL="$INPUT"
+                  fi
+
+                  # Extract app name from URL
+                  APP_NAME=$(basename "$URL" .git)
+                  APP_DIR="apps/$APP_NAME"
+
+                  if [ -d "$APP_DIR" ]; then
+                    echo "Error: App '$APP_NAME' already exists in $APP_DIR"
+                    exit 1
+                  fi
+
+                  echo "Adding git submodule: $URL -> $APP_DIR"
+                  git submodule add "$URL" "$APP_DIR"
+
+                  echo "Fetching app source..."
+                  git submodule update --init --recursive "$APP_DIR"
+
+                  echo "Adding $APP_NAME to pyproject.toml workspace members..."
+                  # Add to [tool.uv.workspace] members list
+                  sed -i "/^members = \[/,/^]/ { /^]/ i\    \"apps\/$APP_NAME\"," pyproject.toml
+
+                  echo "Adding $APP_NAME to sites/apps.txt..."
+                  # Add to apps.txt if not already present
+                  if ! grep -q "^$APP_NAME$" sites/apps.txt; then
+                    echo "$APP_NAME" >> sites/apps.txt
+                  fi
+
+                  echo "Syncing Python dependencies..."
+                  uv sync
+
+                  echo ""
+                  echo "✅ App '$APP_NAME' added successfully!"
+                  echo ""
+                  echo "Next steps:"
+                  echo "  1. Exit this shell: exit"
+                  echo "  2. Restart devenv: devenv shell"
+                  echo "  3. Run: bench --site frappe.localhost migrate"
+                  echo "  4. Install the app: bench --site frappe.localhost install-app $APP_NAME"
+                '';
               };
 
               # ─────────────────────────────────────────────────────────────
