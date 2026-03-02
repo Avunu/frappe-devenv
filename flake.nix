@@ -485,6 +485,9 @@
                 # Development email server
                 mailpit
 
+                # Linting and security
+                semgrep
+
                 # Utilities
                 curl
                 file
@@ -825,6 +828,9 @@
                   echo "Adding $APP_NAME to pyproject.toml workspace members..."
                   # Add to [tool.uv.workspace] members list
                   sed -i "/^members = \[/,/^]/ { /^]/ i\    \"apps\/$APP_NAME\"," pyproject.toml
+
+                  # Add to [tool.uv.sources] for workspace linking
+                  sed -i "/frappe = { workspace = true }/ a\\$APP_NAME = { workspace = true }" pyproject.toml
 
                   echo "Adding $APP_NAME to sites/apps.txt..."
                   # Add to apps.txt if not already present
