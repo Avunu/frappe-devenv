@@ -825,7 +825,8 @@
 
                   echo "Adding $APP_NAME to sites/apps.txt..."
                   # Add to apps.txt if not already present
-                  if ! grep -q "^$APP_NAME$" sites/apps.txt; then
+                    if ! grep -q "^$APP_NAME$" sites/apps.txt; then
+                    echo "" >> sites/apps.txt
                     echo "$APP_NAME" >> sites/apps.txt
                   fi
 
