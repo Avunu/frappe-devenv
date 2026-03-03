@@ -197,6 +197,7 @@
                         "restrictedpython"
                         "rq"
                         "rsa"
+                        "ruamel-yaml-clib"
                         "six"
                         "soupsieve"
                         "sql-metadata"
@@ -259,10 +260,47 @@
                 ]
               );
 
-          # Create the virtual environment with all workspace packages
-          pythonEnv = pythonSet.mkVirtualEnv "frappe-bench-env" (
+          # ── Production Python environment ──────────────────────────
+          # Contains only workspace members + their runtime deps.
+          # No dev tools (ruff, mypy, semgrep, pytest, …).
+          # Used by all OCI container images.
+          prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env"
+            workspace.deps.default;
+
+          # ── Development Python environment ──────────────────────────
+          # Adds dev dependency-group (ruff, mypy, semgrep, pytest, …)
+          # and frappe's optional dev/test extras on top of the
+          # production deps.
+          #
+          # Uses uv2nix's editable overlay so that workspace packages
+          # resolve from the local source tree (apps/*) rather than
+          # Nix-store copies.  This replaces the old PYTHONPATH hack
+          # and gives proper __file__ paths, entry-point discovery,
+          # and hot-reload support.
+          editablePythonSet = pythonSet.overrideScope (
+            lib.composeManyExtensions [
+              (workspace.mkEditablePyprojectOverlay {
+                root = "$REPO_ROOT";
+              })
+              # hatchling's editable-wheel builder imports the `editables`
+              # package — provide it as a build input for packages that
+              # use hatchling (the workspace root in our case).
+              (final: prev: {
+                frappe-bench-devenv = prev.frappe-bench-devenv.overrideAttrs (old: {
+                  nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                    final.editables
+                  ];
+                });
+              })
+            ]
+          );
+
+          devPythonEnv = editablePythonSet.mkVirtualEnv "frappe-bench-dev-env" (
             workspace.deps.default
             // {
+              frappe-bench-devenv =
+                workspace.deps.default.frappe-bench-devenv
+                ++ workspace.deps.groups.frappe-bench-devenv;
               frappe = workspace.deps.default.frappe ++ [
                 "dev"
                 "test"
@@ -270,11 +308,10 @@
             }
           );
 
-          # Build PYTHONPATH from apps/ directories at Nix eval time.
-          # This makes Python resolve workspace modules from local source
-          # instead of the Nix store (like editable installs), so that
-          # frappe.__file__ → apps/frappe/frappe/__init__.py.
-          # Critical for bench build, bench watch, get_app_source_path(), etc.
+          # Build PYTHONPATH from apps/ directories for production
+          # containers.  The containers use the non-editable
+          # prodPythonEnv, so PYTHONPATH is still needed to resolve
+          # workspace packages from benchRoot's /bench/apps/* copies.
           appNames = builtins.attrNames (builtins.readDir ./apps);
           appsPath = root: lib.concatMapStringsSep ":" (app: "${root}/apps/${app}") appNames;
 
@@ -365,7 +402,7 @@
             mkdir -p $out/bench/{sites,logs,config/pids}
 
             # Python env → /bench/env (where bench expects it)
-            ln -s ${pythonEnv} $out/bench/env
+            ln -s ${prodPythonEnv} $out/bench/env
 
             # App source with declarative node_modules from mkYarnPackage
             mkdir -p $out/bench/apps
@@ -457,7 +494,7 @@
           # is handled by benchRoot — only runtime state dirs created here.
           containerEntrypoint = pkgs.writeShellScript "frappe-entrypoint" ''
             set -euo pipefail
-            export PATH="${pythonEnv}/bin:${pkgs.coreutils}/bin:${pkgs.bashInteractive}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.findutils}/bin:${pkgs.which}/bin:$PATH"
+            export PATH="${prodPythonEnv}/bin:${pkgs.coreutils}/bin:${pkgs.bashInteractive}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.findutils}/bin:${pkgs.which}/bin:$PATH"
             ${containerEnvVars}
 
             # Runtime-only: mutable dirs for logs and process state
@@ -485,7 +522,7 @@
 
           # Helper to build a Frappe Python container with shared structure.
           # All containers get: benchRoot (app source + env + node_modules +
-          # config), pythonEnv, and runtime deps — fully declarative.
+          # config), prodPythonEnv, and runtime deps — fully declarative.
           mkFrappeContainer = {
             name,
             startupCommand,
@@ -500,7 +537,7 @@
             copyToRoot = [
               (pkgs.buildEnv {
                 name = builtins.replaceStrings ["/"] ["-"] name + "-env";
-                paths = containerRuntimeDeps ++ [ pythonEnv ] ++ extraPaths;
+                paths = containerRuntimeDeps ++ [ prodPythonEnv ] ++ extraPaths;
                 pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
               })
               benchRoot
@@ -509,7 +546,7 @@
               # Layer 1: System runtime deps (rarely changes)
               { deps = containerRuntimeDeps ++ extraLayerDeps; maxLayers = 10; reproducible = true; }
               # Layer 2: Python environment (changes on uv.lock updates)
-              { deps = [ pythonEnv ]; maxLayers = 20; reproducible = true; }
+              { deps = [ prodPythonEnv ]; maxLayers = 20; reproducible = true; }
               # Layer 3: App source + config + node_modules (changes on code/yarn.lock updates)
               { deps = [ benchRoot ]; maxLayers = 5; reproducible = true; }
             ];
@@ -519,8 +556,9 @@
 
         in
         {
-          # Export the Python environment as a package
-          packages.pythonEnv = pythonEnv;
+          # Export the Python environments as packages
+          packages.prodPythonEnv = prodPythonEnv;
+          packages.devPythonEnv = devPythonEnv;
 
           devenv.shells.default =
             { config, pkgs, ... }:
@@ -531,8 +569,8 @@
               # Packages
               # ─────────────────────────────────────────────────────────────
               packages = with pkgs; [
-                # The uv2nix-built Python environment with all Frappe apps
-                pythonEnv
+                # The uv2nix-built Python environment with all Frappe apps + dev tools
+                devPythonEnv
 
                 # Build dependencies
                 gcc
@@ -554,7 +592,8 @@
                 mailpit
 
                 # Linting and security
-                semgrep
+                # semgrep is managed via uv (pyproject.toml) so it lives in
+                # the Python 3.14 venv — no version mismatch with nixpkgs.
 
                 # Utilities
                 curl
@@ -570,8 +609,8 @@
               # ─────────────────────────────────────────────────────────────
               # Python Environment (provided by uv2nix)
               # ─────────────────────────────────────────────────────────────
-              # Python is provided via the pythonEnv package above
-              # which contains all dependencies from uv.lock
+              # Python is provided via devPythonEnv (editable + dev deps);
+              # production containers use the leaner prodPythonEnv.
 
               # ─────────────────────────────────────────────────────────────
               # Node.js Environment (for frontend builds and socketio)
@@ -648,7 +687,7 @@
 
                 # uv: redirect the virtual-env to a mutable path so `uv add`,
                 # `uv remove`, etc. don't collide with the read-only Nix
-                # store venv. The Nix-built pythonEnv is still on PATH for
+                # store venv. The Nix-built devPythonEnv is still on PATH for
                 # running the app; this env is only for uv's bookkeeping.
                 UV_PROJECT_ENVIRONMENT = config.env.DEVENV_STATE + "/uv-env";
 
@@ -658,10 +697,13 @@
                 # (see enterShell) and use mkYarnPackage for prod containers.
                 YARN_CACHE_FOLDER = config.env.DEVENV_STATE + "/yarn-cache";
 
-                # PYTHONPATH: local apps override Nix store site-packages
-                # Makes Python resolve workspace modules from apps/ source
-                # instead of the Nix store (like editable installs).
-                PYTHONPATH = appsPath config.devenv.root;
+                # REPO_ROOT: used by the uv2nix editable overlay so that
+                # workspace packages (frappe, erpnext, hrms, …) resolve from
+                # the local source tree instead of Nix-store copies.
+                # This replaces the old PYTHONPATH hack with proper editable
+                # installs — correct __file__ paths, entry-point discovery,
+                # and hot-reload all work out of the box.
+                REPO_ROOT = config.devenv.root;
 
                 # Library paths for native dependencies
                 LD_LIBRARY_PATH = lib.makeLibraryPath [
@@ -687,8 +729,8 @@
                 mkdir -p "$DEVENV_STATE/mariadb" "$DEVENV_STATE/sockets" logs config/pids
 
                 # Symlink the Nix-built Python env to ./env where bench expects it
-                if [ "$(readlink env 2>/dev/null)" != "${pythonEnv}" ]; then
-                  ln -sfn "${pythonEnv}" env
+                if [ "$(readlink env 2>/dev/null)" != "${devPythonEnv}" ]; then
+                  ln -sfn "${devPythonEnv}" env
                 fi
 
                 # Install node_modules for each app with yarn (mutable, dev-friendly).
@@ -725,7 +767,7 @@
                 echo "╚════════════════════════════════════════════════════════════╝"
                 echo ""
                 echo "✅ frappe bench environment ready!"
-                echo "   Python: ${pythonEnv}/bin/python"
+                echo "   Python: ${devPythonEnv}/bin/python"
                 echo "   Bench root: $PWD"
                 echo "   Site: frappe.localhost"
                 echo ""
@@ -777,17 +819,17 @@
               processes = {
                 # Frappe Web Server
                 web.exec = ''
-                  exec ${pythonEnv}/bin/bench serve --port 8000
+                  exec ${devPythonEnv}/bin/bench serve --port 8000
                 '';
 
                 # Frappe Scheduler
                 scheduler.exec = ''
-                  exec ${pythonEnv}/bin/bench schedule
+                  exec ${devPythonEnv}/bin/bench schedule
                 '';
 
                 # Background Worker
                 worker.exec = ''
-                  exec ${pythonEnv}/bin/bench worker
+                  exec ${devPythonEnv}/bin/bench worker
                 '';
 
                 # SocketIO Server
@@ -798,7 +840,7 @@
 
                 # File Watcher (for development auto-rebuild)
                 watch.exec = ''
-                  exec ${pythonEnv}/bin/bench watch
+                  exec ${devPythonEnv}/bin/bench watch
                 '';
 
                 # Mailpit (development email server)
@@ -967,7 +1009,7 @@
               #
               # Fully declarative: benchRoot provides the complete /bench
               # directory (app source + node_modules + env + config),
-              # pythonEnv provides the Python runtime, and
+              # prodPythonEnv provides the Python runtime, and
               # containerRuntimeDeps provides system libraries.
               #
               # No imperative steps at container start — all dependency
@@ -991,7 +1033,7 @@
                 web = mkFrappeContainer {
                   name = "frappe/web";
                   startupCommand = [
-                    "${pythonEnv}/bin/gunicorn"
+                    "${prodPythonEnv}/bin/gunicorn"
                     "--bind" "0.0.0.0:8000"
                     "--workers" "4"
                     "--max-requests" "5000"
@@ -1009,25 +1051,25 @@
                 # Enqueues scheduled/cron jobs into Redis
                 scheduler = mkFrappeContainer {
                   name = "frappe/scheduler";
-                  startupCommand = [ "${pythonEnv}/bin/bench" "schedule" ];
+                  startupCommand = [ "${prodPythonEnv}/bin/bench" "schedule" ];
                 };
 
                 # Processes background jobs from the "default" queue
                 worker-default = mkFrappeContainer {
                   name = "frappe/worker-default";
-                  startupCommand = [ "${pythonEnv}/bin/bench" "worker" "--queue" "default" ];
+                  startupCommand = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "default" ];
                 };
 
                 # Processes fast background jobs from the "short" queue
                 worker-short = mkFrappeContainer {
                   name = "frappe/worker-short";
-                  startupCommand = [ "${pythonEnv}/bin/bench" "worker" "--queue" "short" ];
+                  startupCommand = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "short" ];
                 };
 
                 # Processes heavy background jobs from the "long" queue
                 worker-long = mkFrappeContainer {
                   name = "frappe/worker-long";
-                  startupCommand = [ "${pythonEnv}/bin/bench" "worker" "--queue" "long" ];
+                  startupCommand = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "long" ];
                 };
 
                 # Socket.IO realtime server (:9000)
@@ -1092,7 +1134,7 @@
                 #   frappe/bench:latest bench --site X migrate
                 bench = mkFrappeContainer {
                   name = "frappe/bench";
-                  startupCommand = [ "${pythonEnv}/bin/bench" "--help" ];
+                  startupCommand = [ "${prodPythonEnv}/bin/bench" "--help" ];
                   # Node.js needed for bench build (esbuild); node_modules
                   # are already in benchRoot via mkYarnPackage — no yarn needed.
                   extraPaths = [ pkgs.nodejs_24 ];
