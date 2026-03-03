@@ -5,13 +5,30 @@ description = "Frappe Bench - Monorepo workspace for Frappe Development"
 requires-python = ">=3.14"
 readme = "README.md"
 
-# Root-level dependencies (tools used across the workspace)
+# Production runtime dependencies resolved into the shared virtualenv.
+# Only packages needed at runtime in production containers belong here.
+# frappe-bench provides the `bench` CLI used as the entrypoint in
+# containers; setuptools is needed at import time by several transitive
+# deps that use pkg_resources.
 dependencies = [
     "frappe-bench>=5.29.0",
-    "pre-commit>=4.5.1",
-    "pytest>=9.0.2",
-    "ruff>=0.15.0",
     "setuptools>=80.10.2",
+]
+
+# Dev-only tools — included in the devenv shell but excluded from
+# production container images to keep them lean.
+# Note: mypy is NOT listed here because frappe depends on basedmypy
+# (a superset fork that provides the same `mypy` CLI).  Including
+# both causes file collisions in the virtualenv.
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.1",
+    "pydantic>=2.12.5",
+    "pydantic-core>=2.41.5",
+    "pytest>=9.0.2",
+    "responses",
+    "ruff>=0.15.0",
+    "semgrep>=1.145.0",
 ]
 
 [tool.uv]
@@ -24,24 +41,19 @@ extra-build-dependencies = { cairocffi = ["setuptools"] }
 # The bench code works fine with 8.3.x (_check_nested_chain exists), so override.
 override-dependencies = ["click~=8.3.1"]
 
-[dependency-groups]
-dev = [
-    "ruff",
-    "mypy",
-    "pytest",
-    "pre-commit>=4.5.1",
-    "responses",
-]
-
 [tool.uv.workspace]
 members = [
     "apps/frappe",
     "apps/monkeyscript",
+    "apps/erpnext",
+    "apps/hrms",
 ]
 
 [tool.uv.sources]
 # Link workspace members as editable installs
 frappe = { workspace = true }
+erpnext = { workspace = true }
+hrms = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]
