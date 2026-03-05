@@ -264,8 +264,7 @@
           # Contains only workspace members + their runtime deps.
           # No dev tools (ruff, mypy, semgrep, pytest, …).
           # Used by all OCI container images.
-          prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env"
-            workspace.deps.default;
+          prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env" workspace.deps.default;
 
           # ── Development Python environment ──────────────────────────
           # Adds dev dependency-group (ruff, mypy, semgrep, pytest, …)
@@ -296,16 +295,7 @@
           );
 
           devPythonEnv = editablePythonSet.mkVirtualEnv "frappe-bench-dev-env" (
-            workspace.deps.default
-            // {
-              frappe-bench-devenv =
-                workspace.deps.default.frappe-bench-devenv
-                ++ workspace.deps.groups.frappe-bench-devenv;
-              frappe = workspace.deps.default.frappe ++ [
-                "dev"
-                "test"
-              ];
-            }
+            lib.filterAttrs (name: _: name != "frappe-bench-devenv") (workspace.deps.default // workspace.deps.groups)
           );
 
           # Build PYTHONPATH from apps/ directories for production
@@ -318,39 +308,48 @@
           # Node.js dependencies for apps with package.json and yarn.lock
           # Used by mkYarnPackage for production container builds only;
           # in development, Yarn manages node_modules natively (mutable).
-          appsWithNode = lib.filter (app: builtins.pathExists (./apps + "/${app}/package.json") && builtins.pathExists (./apps + "/${app}/yarn.lock")) appNames;
+          appsWithNode = lib.filter (
+            app:
+            builtins.pathExists (./apps + "/${app}/package.json")
+            && builtins.pathExists (./apps + "/${app}/yarn.lock")
+          ) appNames;
 
           # Production-only: build immutable node_modules from yarn.lock
           # via mkYarnPackage. Used in container images for reproducible deploys.
           # In development, Yarn manages node_modules natively so that
           # `yarn add`, `yarn remove`, and `yarn upgrade` work freely.
-          nodeModulesForApp = app:
+          nodeModulesForApp =
+            app:
             let
               pkg = pkgs.mkYarnPackage {
                 name = app;
                 src = ./apps/${app};
                 nodejs = pkgs.nodejs_24;
                 # get app_version from the app's hooks.py or __init__.py, otherwise default to "0.1.0"
-                version = let
-                  hooksPath = ./apps/${app}/hooks.py;
-                  initPath = ./apps/${app}/${app}/__init__.py;
-                  hooksContent = if builtins.pathExists hooksPath then builtins.readFile hooksPath else "";
-                  initContent = if builtins.pathExists initPath then builtins.readFile initPath else "";
-                  # First try app_version in hooks.py
-                  appVersionMatch = builtins.match ".*app_version[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*" hooksContent;
-                  # Fallback to __version__ in __init__.py
-                  versionMatch = builtins.match ".*__version__[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*" initContent;
-                in
-                  if appVersionMatch != null then builtins.elemAt appVersionMatch 0
-                  else if versionMatch != null then builtins.elemAt versionMatch 0
-                  else "0.1.0";
+                version =
+                  let
+                    hooksPath = ./apps/${app}/hooks.py;
+                    initPath = ./apps/${app}/${app}/__init__.py;
+                    hooksContent = if builtins.pathExists hooksPath then builtins.readFile hooksPath else "";
+                    initContent = if builtins.pathExists initPath then builtins.readFile initPath else "";
+                    # First try app_version in hooks.py
+                    appVersionMatch = builtins.match ".*app_version[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*" hooksContent;
+                    # Fallback to __version__ in __init__.py
+                    versionMatch = builtins.match ".*__version__[[:space:]]*=[[:space:]]*['\"]([^'\"]+)['\"].*" initContent;
+                  in
+                  if appVersionMatch != null then
+                    builtins.elemAt appVersionMatch 0
+                  else if versionMatch != null then
+                    builtins.elemAt versionMatch 0
+                  else
+                    "0.1.0";
                 yarn = pkgs.yarn;
               };
             in
-              pkgs.runCommand "${app}-node-modules" {} ''
-                mkdir -p $out
-                ln -s ${pkg}/libexec/${app}/node_modules $out/node_modules
-              '';
+            pkgs.runCommand "${app}-node-modules" { } ''
+              mkdir -p $out
+              ln -s ${pkg}/libexec/${app}/node_modules $out/node_modules
+            '';
 
           nodeModules = lib.genAttrs appsWithNode nodeModulesForApp;
 
@@ -398,7 +397,7 @@
           # Combines app source, Nix-built node_modules (from mkYarnPackage),
           # Python env symlink, config files, and site metadata into a
           # single derivation — no imperative setup at container start.
-          benchRoot = pkgs.runCommand "bench-root" {} ''
+          benchRoot = pkgs.runCommand "bench-root" { } ''
             mkdir -p $out/bench/{sites,logs,config/pids}
 
             # Python env → /bench/env (where bench expects it)
@@ -406,14 +405,16 @@
 
             # App source with declarative node_modules from mkYarnPackage
             mkdir -p $out/bench/apps
-            ${lib.concatStringsSep "\n" (map (app: ''
-              cp -r ${./apps/${app}} $out/bench/apps/${app}
-              chmod -R u+w $out/bench/apps/${app}
-              ${lib.optionalString (builtins.elem app appsWithNode) ''
-                rm -rf $out/bench/apps/${app}/node_modules
-                ln -s ${nodeModules.${app}}/node_modules $out/bench/apps/${app}/node_modules
-              ''}
-            '') appNames)}
+            ${lib.concatStringsSep "\n" (
+              map (app: ''
+                cp -r ${./apps/${app}} $out/bench/apps/${app}
+                chmod -R u+w $out/bench/apps/${app}
+                ${lib.optionalString (builtins.elem app appsWithNode) ''
+                  rm -rf $out/bench/apps/${app}/node_modules
+                  ln -s ${nodeModules.${app}}/node_modules $out/bench/apps/${app}/node_modules
+                ''}
+              '') appNames
+            )}
 
             # Site metadata (tells Frappe which apps are installed)
             ${lib.optionalString (builtins.pathExists ./sites/apps.json) ''
@@ -481,12 +482,23 @@
             ''export FRAPPE_STREAM_LOGGING="1"''
             ''export FRAPPE_TUNE_GC="1"''
             ''export SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"''
-            ''export LD_LIBRARY_PATH="${lib.makeLibraryPath [
-              pkgs.zlib pkgs.openssl pkgs.libffi pkgs.file.out
-              pkgs.mariadb.client pkgs.cairo pkgs.pango
-              pkgs.gdk-pixbuf pkgs.harfbuzz pkgs.fontconfig
-              pkgs.freetype pkgs.libjpeg pkgs.libpng
-            ]}"''
+            ''export LD_LIBRARY_PATH="${
+              lib.makeLibraryPath [
+                pkgs.zlib
+                pkgs.openssl
+                pkgs.libffi
+                pkgs.file.out
+                pkgs.mariadb.client
+                pkgs.cairo
+                pkgs.pango
+                pkgs.gdk-pixbuf
+                pkgs.harfbuzz
+                pkgs.fontconfig
+                pkgs.freetype
+                pkgs.libjpeg
+                pkgs.libpng
+              ]
+            }"''
           ];
 
           # Entrypoint for Frappe Python containers.
@@ -523,36 +535,60 @@
           # Helper to build a Frappe Python container with shared structure.
           # All containers get: benchRoot (app source + env + node_modules +
           # config), prodPythonEnv, and runtime deps — fully declarative.
-          mkFrappeContainer = {
-            name,
-            startupCommand,
-            workingDir ? "/bench/sites",
-            entrypoint ? [ containerEntrypoint ],
-            extraPaths ? [],
-            extraLayerDeps ? [],
-          }: {
-            inherit name workingDir entrypoint startupCommand;
-            version = "latest";
-            registry = "docker-daemon:";
-            copyToRoot = [
-              (pkgs.buildEnv {
-                name = builtins.replaceStrings ["/"] ["-"] name + "-env";
-                paths = containerRuntimeDeps ++ [ prodPythonEnv ] ++ extraPaths;
-                pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
-              })
-              benchRoot
-            ];
-            layers = [
-              # Layer 1: System runtime deps (rarely changes)
-              { deps = containerRuntimeDeps ++ extraLayerDeps; maxLayers = 10; reproducible = true; }
-              # Layer 2: Python environment (changes on uv.lock updates)
-              { deps = [ prodPythonEnv ]; maxLayers = 20; reproducible = true; }
-              # Layer 3: App source + config + node_modules (changes on code/yarn.lock updates)
-              { deps = [ benchRoot ]; maxLayers = 5; reproducible = true; }
-            ];
-            enableLayerDeduplication = true;
-            maxLayers = 40;
-          };
+          mkFrappeContainer =
+            {
+              name,
+              startupCommand,
+              workingDir ? "/bench/sites",
+              entrypoint ? [ containerEntrypoint ],
+              extraPaths ? [ ],
+              extraLayerDeps ? [ ],
+            }:
+            {
+              inherit
+                name
+                workingDir
+                entrypoint
+                startupCommand
+                ;
+              version = "latest";
+              registry = "docker-daemon:";
+              copyToRoot = [
+                (pkgs.buildEnv {
+                  name = builtins.replaceStrings [ "/" ] [ "-" ] name + "-env";
+                  paths = containerRuntimeDeps ++ [ prodPythonEnv ] ++ extraPaths;
+                  pathsToLink = [
+                    "/bin"
+                    "/lib"
+                    "/share"
+                    "/etc"
+                  ];
+                })
+                benchRoot
+              ];
+              layers = [
+                # Layer 1: System runtime deps (rarely changes)
+                {
+                  deps = containerRuntimeDeps ++ extraLayerDeps;
+                  maxLayers = 10;
+                  reproducible = true;
+                }
+                # Layer 2: Python environment (changes on uv.lock updates)
+                {
+                  deps = [ prodPythonEnv ];
+                  maxLayers = 20;
+                  reproducible = true;
+                }
+                # Layer 3: App source + config + node_modules (changes on code/yarn.lock updates)
+                {
+                  deps = [ benchRoot ];
+                  maxLayers = 5;
+                  reproducible = true;
+                }
+              ];
+              enableLayerDeduplication = true;
+              maxLayers = 40;
+            };
 
         in
         {
@@ -739,16 +775,18 @@
                 # node_modules so `yarn add`/`yarn remove` work.
                 # If node_modules already exists and is a Nix store symlink,
                 # remove it first so yarn can create a real directory.
-                ${lib.concatStringsSep "\n" (map (app: ''
-                  if [ -L "apps/${app}/node_modules" ] && readlink "apps/${app}/node_modules" | grep -q '/nix/store'; then
-                    echo "Replacing Nix store node_modules symlink for ${app}..."
-                    rm "apps/${app}/node_modules"
-                  fi
-                  if [ ! -d "apps/${app}/node_modules" ]; then
-                    echo "Installing node_modules for ${app}..."
-                    (cd "apps/${app}" && yarn install --frozen-lockfile 2>&1 | tail -1)
-                  fi
-                '') appsWithNode)}
+                ${lib.concatStringsSep "\n" (
+                  map (app: ''
+                    if [ -L "apps/${app}/node_modules" ] && readlink "apps/${app}/node_modules" | grep -q '/nix/store'; then
+                      echo "Replacing Nix store node_modules symlink for ${app}..."
+                      rm "apps/${app}/node_modules"
+                    fi
+                    if [ ! -d "apps/${app}/node_modules" ]; then
+                      echo "Installing node_modules for ${app}..."
+                      (cd "apps/${app}" && yarn install --frozen-lockfile 2>&1 | tail -1)
+                    fi
+                  '') appsWithNode
+                )}
 
                 echo ""
                 echo "╔════════════════════════════════════════════════════════════╗"
@@ -922,10 +960,12 @@
                   uv lock && uv sync
                   echo ""
                   echo "Updating Node dependencies..."
-                  ${lib.concatStringsSep "\n" (map (app: ''
-                    echo "  yarn install: ${app}"
-                    (cd "apps/${app}" && yarn install)
-                  '') appsWithNode)}
+                  ${lib.concatStringsSep "\n" (
+                    map (app: ''
+                      echo "  yarn install: ${app}"
+                      (cd "apps/${app}" && yarn install)
+                    '') appsWithNode
+                  )}
                   echo ""
                   echo "Done! Lock files updated. Commit uv.lock and yarn.lock files."
                   echo "Production containers will pick up changes on next nix build."
@@ -1034,16 +1074,25 @@
                   name = "frappe/web";
                   startupCommand = [
                     "${prodPythonEnv}/bin/gunicorn"
-                    "--bind" "0.0.0.0:8000"
-                    "--workers" "4"
-                    "--max-requests" "5000"
-                    "--max-requests-jitter" "500"
-                    "--timeout" "120"
+                    "--bind"
+                    "0.0.0.0:8000"
+                    "--workers"
+                    "4"
+                    "--max-requests"
+                    "5000"
+                    "--max-requests-jitter"
+                    "500"
+                    "--timeout"
+                    "120"
                     "--preload"
-                    "--graceful-timeout" "30"
-                    "--keep-alive" "5"
-                    "--access-logfile" "-"
-                    "--error-logfile" "-"
+                    "--graceful-timeout"
+                    "30"
+                    "--keep-alive"
+                    "5"
+                    "--access-logfile"
+                    "-"
+                    "--error-logfile"
+                    "-"
                     "frappe.app:application"
                   ];
                 };
@@ -1051,25 +1100,43 @@
                 # Enqueues scheduled/cron jobs into Redis
                 scheduler = mkFrappeContainer {
                   name = "frappe/scheduler";
-                  startupCommand = [ "${prodPythonEnv}/bin/bench" "schedule" ];
+                  startupCommand = [
+                    "${prodPythonEnv}/bin/bench"
+                    "schedule"
+                  ];
                 };
 
                 # Processes background jobs from the "default" queue
                 worker-default = mkFrappeContainer {
                   name = "frappe/worker-default";
-                  startupCommand = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "default" ];
+                  startupCommand = [
+                    "${prodPythonEnv}/bin/bench"
+                    "worker"
+                    "--queue"
+                    "default"
+                  ];
                 };
 
                 # Processes fast background jobs from the "short" queue
                 worker-short = mkFrappeContainer {
                   name = "frappe/worker-short";
-                  startupCommand = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "short" ];
+                  startupCommand = [
+                    "${prodPythonEnv}/bin/bench"
+                    "worker"
+                    "--queue"
+                    "short"
+                  ];
                 };
 
                 # Processes heavy background jobs from the "long" queue
                 worker-long = mkFrappeContainer {
                   name = "frappe/worker-long";
-                  startupCommand = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "long" ];
+                  startupCommand = [
+                    "${prodPythonEnv}/bin/bench"
+                    "worker"
+                    "--queue"
+                    "long"
+                  ];
                 };
 
                 # Socket.IO realtime server (:9000)
@@ -1087,14 +1154,37 @@
                   copyToRoot = [
                     (pkgs.buildEnv {
                       name = "socketio-env";
-                      paths = with pkgs; [ coreutils bashInteractive cacert nodejs_24 ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      paths = with pkgs; [
+                        coreutils
+                        bashInteractive
+                        cacert
+                        nodejs_24
+                      ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                     benchRoot
                   ];
                   layers = [
-                    { deps = with pkgs; [ coreutils bashInteractive cacert nodejs_24 ]; maxLayers = 5; reproducible = true; }
-                    { deps = [ benchRoot ]; maxLayers = 5; reproducible = true; }
+                    {
+                      deps = with pkgs; [
+                        coreutils
+                        bashInteractive
+                        cacert
+                        nodejs_24
+                      ];
+                      maxLayers = 5;
+                      reproducible = true;
+                    }
+                    {
+                      deps = [ benchRoot ];
+                      maxLayers = 5;
+                      reproducible = true;
+                    }
                   ];
                   enableLayerDeduplication = true;
                   maxLayers = 15;
@@ -1110,20 +1200,43 @@
                   entrypoint = [ nginxEntrypoint ];
                   startupCommand = [
                     "${pkgs.nginx}/bin/nginx"
-                    "-c" "/bench/config/nginx.conf"
-                    "-g" "daemon off;"
+                    "-c"
+                    "/bench/config/nginx.conf"
+                    "-g"
+                    "daemon off;"
                   ];
                   copyToRoot = [
                     (pkgs.buildEnv {
                       name = "nginx-env";
-                      paths = with pkgs; [ coreutils bashInteractive nginx ];
-                      pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                      paths = with pkgs; [
+                        coreutils
+                        bashInteractive
+                        nginx
+                      ];
+                      pathsToLink = [
+                        "/bin"
+                        "/lib"
+                        "/share"
+                        "/etc"
+                      ];
                     })
                     benchRoot
                   ];
                   layers = [
-                    { deps = with pkgs; [ coreutils bashInteractive nginx ]; maxLayers = 5; reproducible = true; }
-                    { deps = [ benchRoot ]; maxLayers = 5; reproducible = true; }
+                    {
+                      deps = with pkgs; [
+                        coreutils
+                        bashInteractive
+                        nginx
+                      ];
+                      maxLayers = 5;
+                      reproducible = true;
+                    }
+                    {
+                      deps = [ benchRoot ];
+                      maxLayers = 5;
+                      reproducible = true;
+                    }
                   ];
                   enableLayerDeduplication = true;
                   maxLayers = 15;
@@ -1134,7 +1247,10 @@
                 #   frappe/bench:latest bench --site X migrate
                 bench = mkFrappeContainer {
                   name = "frappe/bench";
-                  startupCommand = [ "${prodPythonEnv}/bin/bench" "--help" ];
+                  startupCommand = [
+                    "${prodPythonEnv}/bin/bench"
+                    "--help"
+                  ];
                   # Node.js needed for bench build (esbuild); node_modules
                   # are already in benchRoot via mkYarnPackage — no yarn needed.
                   extraPaths = [ pkgs.nodejs_24 ];

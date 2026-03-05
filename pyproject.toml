@@ -63,10 +63,6 @@ build-backend = "hatchling.build"
 # This is a virtual package - workspace root only
 skip-excluded-dirs = true
 
-[tool.hatch.build.targets.wheel]
-# Minimal stub package for editable install compatibility
-packages = ["wheel_target"]
-
 [tool.ruff]
 line-length = 110
 target-version = "py314"
