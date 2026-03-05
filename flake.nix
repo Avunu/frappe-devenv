@@ -295,7 +295,9 @@
           );
 
           devPythonEnv = editablePythonSet.mkVirtualEnv "frappe-bench-dev-env" (
-            lib.filterAttrs (name: _: name != "frappe-bench-devenv") (workspace.deps.default // workspace.deps.groups)
+            lib.filterAttrs (name: _: name != "frappe-bench-devenv") (
+              workspace.deps.default // workspace.deps.groups
+            )
           );
 
           # Build PYTHONPATH from apps/ directories for production
@@ -909,67 +911,6 @@
               # Scripts (convenience commands)
               # ─────────────────────────────────────────────────────────────
               scripts = {
-                bench-console.exec = ''
-                  bench --site frappe.localhost console
-                '';
-
-                bench-migrate.exec = ''
-                  bench --site frappe.localhost migrate
-                '';
-
-                bench-clear-cache.exec = ''
-                  bench --site frappe.localhost clear-cache
-                '';
-
-                bench-build.exec = ''
-                  bench build
-                '';
-
-                # Restore a site from a SQL backup file
-                # Usage: frappe-restore <sql-file-path> [additional-bench-restore-options]
-                bench-restore.exec = ''
-                  if [ -z "$1" ]; then
-                    echo "Usage: frappe-restore <sql-file-path> [options]"
-                    echo ""
-                    echo "Restores the Frappe site from a SQL backup file."
-                    echo "Database credentials are automatically provided from environment variables."
-                    echo ""
-                    echo "Options (passed to bench restore):"
-                    echo "  --with-public-files <path>   Restore public files from tar"
-                    echo "  --with-private-files <path>  Restore private files from tar"
-                    echo "  --encryption-key <key>       Backup encryption key"
-                    echo "  --force                      Ignore validations and warnings"
-                    exit 1
-                  fi
-
-                  SQL_FILE="$1"
-                  shift
-
-                  echo "Restoring site $FRAPPE_SITE from $SQL_FILE..."
-                  echo "Using database user: $FRAPPE_DB_ROOT_USERNAME"
-
-                  exec bench --site "$FRAPPE_SITE" restore "$SQL_FILE" \
-                    --db-root-username "root" \
-                    --db-root-password "" \
-                    "$@"
-                '';
-
-                # Update all dependencies (Python + Node)
-                update-deps.exec = ''
-                  echo "Updating Python dependencies..."
-                  uv lock && uv sync
-                  echo ""
-                  echo "Updating Node dependencies..."
-                  ${lib.concatStringsSep "\n" (
-                    map (app: ''
-                      echo "  yarn install: ${app}"
-                      (cd "apps/${app}" && yarn install)
-                    '') appsWithNode
-                  )}
-                  echo ""
-                  echo "Done! Lock files updated. Commit uv.lock and yarn.lock files."
-                  echo "Production containers will pick up changes on next nix build."
-                '';
 
                 # Add a new Frappe app from git URL or GitHub alias
                 # Usage: bench-get-app <url-or-alias>
@@ -1041,8 +982,53 @@
                   echo "  3. Run: bench --site frappe.localhost migrate"
                   echo "  4. Install the app: bench --site frappe.localhost install-app $APP_NAME"
                 '';
-              };
 
+                # Restore a site from a SQL backup file
+                # Usage: frappe-restore <sql-file-path> [additional-bench-restore-options]
+                bench-restore.exec = ''
+                  if [ -z "$1" ]; then
+                    echo "Usage: frappe-restore <sql-file-path> [options]"
+                    echo ""
+                    echo "Restores the Frappe site from a SQL backup file."
+                    echo "Database credentials are automatically provided from environment variables."
+                    echo ""
+                    echo "Options (passed to bench restore):"
+                    echo "  --with-public-files <path>   Restore public files from tar"
+                    echo "  --with-private-files <path>  Restore private files from tar"
+                    echo "  --encryption-key <key>       Backup encryption key"
+                    echo "  --force                      Ignore validations and warnings"
+                    exit 1
+                  fi
+
+                  SQL_FILE="$1"
+                  shift
+
+                  echo "Restoring site $FRAPPE_SITE from $SQL_FILE..."
+                  echo "Using database user: $FRAPPE_DB_ROOT_USERNAME"
+
+                  exec bench --site "$FRAPPE_SITE" restore "$SQL_FILE" \
+                    --db-root-username "root" \
+                    --db-root-password "" \
+                    "$@"
+                '';
+
+                # Update all dependencies (Python + Node)
+                update-deps.exec = ''
+                  echo "Updating Python dependencies..."
+                  uv lock && uv sync
+                  echo ""
+                  echo "Updating Node dependencies..."
+                  ${lib.concatStringsSep "\n" (
+                    map (app: ''
+                      echo "  yarn install: ${app}"
+                      (cd "apps/${app}" && yarn install)
+                    '') appsWithNode
+                  )}
+                  echo ""
+                  echo "Done! Lock files updated. Commit uv.lock and yarn.lock files."
+                  echo "Production containers will pick up changes on next nix build."
+                '';
+              };
               # ─────────────────────────────────────────────────────────────
               # Production OCI Containers (devenv container <name> build)
               # ─────────────────────────────────────────────────────────────

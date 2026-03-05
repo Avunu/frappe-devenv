@@ -52,6 +52,18 @@ The environment uses Nix flakes and devenv to declaratively manage:
 
 5. Open the development site in your browser: <http://localhost:8000/>
 
+## Managing Apps
+
+Frappe apps are included as **git submodules** under the `apps/` directory (see [.gitmodules](.gitmodules)). Each submodule is also registered as a [uv workspace](https://docs.astral.sh/uv/concepts/workspaces/) member in [pyproject.toml](pyproject.toml), so Python dependencies are resolved together across all apps.
+
+### Custom Commands
+
+The devenv shell provides several convenience commands:
+
+* **`bench-get-app <url-or-alias>`** — Adds a new Frappe app by cloning it as a git submodule, registering it in the uv workspace, and syncing dependencies. Accepts a GitHub shorthand (e.g. `frappe/payments`) or a full git URL.
+* **`bench-restore <sql-file> [options]`** — Restores the local Frappe site from a SQL backup file, automatically supplying the database credentials from the environment.
+* **`update-deps`** — Re-locks and syncs both Python (uv) and Node (yarn) dependencies across all apps, then reminds you to commit the updated lock files.
+
 ## Notes
 
 This is very much a work in progress, and the container workflow is not yet tested. Feel free to give it a go and report back with your findings!
