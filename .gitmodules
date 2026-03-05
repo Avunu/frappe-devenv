@@ -4,7 +4,10 @@
 	branch = develop
 	shallow = true
 
-[submodule "apps/monkeyscript"]
-	path = apps/monkeyscript
-	branch = main
-	shallow = true
+[submodule "apps/hrms"]
+	path = apps/hrms
+	url = https://github.com/frappe/hrms.git
+
+[submodule "apps/erpnext"]
+	path = apps/erpnext
+	url = https://github.com/frappe/erpnext.git
