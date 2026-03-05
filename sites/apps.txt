@@ -1,2 +1,3 @@
 frappe
-monkeyscript
+hrms
+erpnext
