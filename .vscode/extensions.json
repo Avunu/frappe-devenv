@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+		"mkhl.direnv",
+        "mtxr.sqltools-driver-mysql",
+        "mtxr.sqltools",
+    ]
+}
