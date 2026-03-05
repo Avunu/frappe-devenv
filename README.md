@@ -4,7 +4,7 @@ A declarative Frappe developer environment, providing reproducible development a
 
 ## Overview
 
-This repository serves as a monorepo workspace for Frappe development, including a few flagship Frappe apps:
+This repository serves as a monorepo workspace template for Frappe development, including a few flagship Frappe apps:
 
 * **Frappe Framework** (apps/frappe)
 * **ERPNext** (apps/erpnext)
