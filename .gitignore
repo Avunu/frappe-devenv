@@ -1,5 +1,6 @@
 !config/pids/.gitkeep
 !logs/.gitkeep
+./result
 .bash_history
 .cache
 .config
