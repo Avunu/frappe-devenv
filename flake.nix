@@ -10,10 +10,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-parts.url = "github:hercules-ci/flake-parts";
-    frappe = {
-      url = "github:frappe/frappe";
-      flake = false;
-    };
     # Python dependency management via uv
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
@@ -298,6 +294,13 @@
             lib.filterAttrs (name: _: name != "frappe-bench-devenv") (
               workspace.deps.default // workspace.deps.groups
             )
+            // {
+              # Direct deps of the root package (frappe-bench-devenv) that
+              # we still need in the dev env, even though the root virtual
+              # package itself is excluded to avoid the wheel_target stub.
+              frappe-bench = [ ];
+              setuptools = [ ];
+            }
           );
 
           # Build PYTHONPATH from apps/ directories for production
