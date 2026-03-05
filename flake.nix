@@ -260,7 +260,13 @@
           # Contains only workspace members + their runtime deps.
           # No dev tools (ruff, mypy, semgrep, pytest, …).
           # Used by all OCI container images.
-          prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env" workspace.deps.default;
+          prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env" (
+            lib.filterAttrs (name: _: name != "frappe-bench-devenv") workspace.deps.default
+            // {
+              frappe-bench = [ ];
+              setuptools = [ ];
+            }
+          );
 
           # ── Development Python environment ──────────────────────────
           # Adds dev dependency-group (ruff, mypy, semgrep, pytest, …)
@@ -273,21 +279,9 @@
           # and gives proper __file__ paths, entry-point discovery,
           # and hot-reload support.
           editablePythonSet = pythonSet.overrideScope (
-            lib.composeManyExtensions [
-              (workspace.mkEditablePyprojectOverlay {
-                root = "$REPO_ROOT";
-              })
-              # hatchling's editable-wheel builder imports the `editables`
-              # package — provide it as a build input for packages that
-              # use hatchling (the workspace root in our case).
-              (final: prev: {
-                frappe-bench-devenv = prev.frappe-bench-devenv.overrideAttrs (old: {
-                  nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
-                    final.editables
-                  ];
-                });
-              })
-            ]
+            workspace.mkEditablePyprojectOverlay {
+              root = "$REPO_ROOT";
+            }
           );
 
           devPythonEnv = editablePythonSet.mkVirtualEnv "frappe-bench-dev-env" (
