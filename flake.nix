@@ -72,6 +72,16 @@
           # Load uv workspace from root pyproject.toml + uv.lock
           workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
 
+          # Read the root pyproject.toml to extract direct dependencies.
+          # These are re-added explicitly when the root virtual package
+          # (frappe-bench-devenv) is filtered out of mkVirtualEnv specs,
+          # so we don't need a wheel_target stub directory.
+          rootPyproject = builtins.fromTOML (builtins.readFile ./pyproject.toml);
+          rootDepNames = map (
+            dep: lib.strings.toLower (builtins.head (builtins.match "([A-Za-z0-9_-]+).*" dep))
+          ) (rootPyproject.project.dependencies or [ ]);
+          rootDepsAttr = lib.genAttrs rootDepNames (_: [ ]);
+
           # Create overlay from workspace
           overlay = workspace.mkPyprojectOverlay {
             sourcePreference = "wheel";
@@ -262,10 +272,7 @@
           # Used by all OCI container images.
           prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env" (
             lib.filterAttrs (name: _: name != "frappe-bench-devenv") workspace.deps.default
-            // {
-              frappe-bench = [ ];
-              setuptools = [ ];
-            }
+            // rootDepsAttr
           );
 
           # ── Development Python environment ──────────────────────────
@@ -288,13 +295,7 @@
             lib.filterAttrs (name: _: name != "frappe-bench-devenv") (
               workspace.deps.default // workspace.deps.groups
             )
-            // {
-              # Direct deps of the root package (frappe-bench-devenv) that
-              # we still need in the dev env, even though the root virtual
-              # package itself is excluded to avoid the wheel_target stub.
-              frappe-bench = [ ];
-              setuptools = [ ];
-            }
+            // rootDepsAttr
           );
 
           # Build PYTHONPATH from apps/ directories for production
