@@ -1,6 +1,5 @@
 !config/pids/.gitkeep
 !logs/.gitkeep
-./result
 .bash_history
 .cache
 .config
@@ -35,4 +34,5 @@ logs/*
 node_modules
 pequea_bench/
 queue.rdb
+result
 sites/assets/*
