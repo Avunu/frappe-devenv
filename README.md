@@ -1,6 +1,6 @@
 # [devenv](https://github.com/cachix/devenv)-managed [Frappe](https://github.com/frappe/frappe) Bench
 
-A declarative developer environment for Frappe sites. This setup provides reproducible development and production environments for Frappe sites and applications.
+A declarative Frappe developer environment, providing reproducible development and production environments for Frappe sites and applications.
 
 ## Overview
 
