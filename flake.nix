@@ -1026,6 +1026,77 @@
                   echo "Done! Lock files updated. Commit uv.lock and yarn.lock files."
                   echo "Production containers will pick up changes on next nix build."
                 '';
+
+                # Replacement for `bench update` that works with submodule-based apps.
+                #
+                # Frappe bench hardcodes an `upstream` remote for all apps, but in this
+                # devenv apps are git submodules whose only remote is `origin`. This script
+                # replicates the pull+reset+patch+build pipeline without touching pip or
+                # the read-only Nix store.
+                #
+                # Usage:
+                #   bench-update            # pull, migrate, build
+                #   bench-update --pull     # pull only (skip migrate + build)
+                #   bench-update --migrate  # migrate only
+                #   bench-update --build    # build only
+                bench-update.exec = ''
+                  set -euo pipefail
+
+                  PULL=true
+                  MIGRATE=true
+                  BUILD=true
+
+                  for arg in "$@"; do
+                    case "$arg" in
+                      --pull)    MIGRATE=false; BUILD=false ;;
+                      --migrate) PULL=false;   BUILD=false  ;;
+                      --build)   PULL=false;   MIGRATE=false;;
+                      --help|-h)
+                        echo "Usage: bench-update [--pull | --migrate | --build]"
+                        echo ""
+                        echo "  (no flags)  Pull all apps, run migrations, build assets"
+                        echo "  --pull      Pull latest commits for each app only"
+                        echo "  --migrate   Run DB migrations only"
+                        echo "  --build     Build JS/CSS assets only"
+                        exit 0 ;;
+                      *) echo "Unknown flag: $arg" >&2; exit 1 ;;
+                    esac
+                  done
+
+                  BENCH_ROOT="$(git rev-parse --show-toplevel)"
+
+                  if $PULL; then
+                    echo "── Pulling latest commits for all app submodules ────────────"
+                    git submodule foreach --recursive '
+                      # Ensure we are on a real branch (not detached HEAD)
+                      branch=$(git symbolic-ref --short HEAD 2>/dev/null) || {
+                        echo "  ⚠  $name: detached HEAD — skipping pull"
+                        exit 0
+                      }
+                      echo "  → $name ($branch)"
+                      git fetch --depth=1 --no-tags origin "$branch"
+                      git reset --hard "origin/$branch"
+                      git reflog expire --all
+                      git gc --quiet --prune=all
+                      find . -name "*.pyc" -delete
+                    '
+                    echo ""
+                  fi
+
+                  if $MIGRATE; then
+                    echo "── Running migrations ───────────────────────────────────────"
+                    bench --site "$FRAPPE_SITE" migrate
+                    echo ""
+                  fi
+
+                  if $BUILD; then
+                    echo "── Building assets ──────────────────────────────────────────"
+                    bench build
+                    echo ""
+                  fi
+
+                  echo "✅ bench-update complete"
+                '';
               };
               # ─────────────────────────────────────────────────────────────
               # Production OCI Containers (devenv container <name> build)
