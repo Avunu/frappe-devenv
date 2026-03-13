@@ -29,10 +29,10 @@ The environment uses Nix flakes and devenv to declaratively manage:
 If you aren't yet set up for running NixOS Flake-based software locally, the easiest route is to install NixOS on WSL and use the Avunu configuration.
 
 1. Enable/install NixOS WSL via the [Quickstart documentation](https://nix-community.github.io/NixOS-WSL/).
-2. Activate the [Avunu NixOS configuration](https://github.com/avunu/nixos-wsl) within the NixOS shell:
+2. Activate the [Avunu NixOS WSL "micro" configuration](https://github.com/avunu/nixos-wsl-micro) within the NixOS shell:
 
 ```Shell
-curl -fsSL https://raw.githubusercontent.com/Avunu/nixos-wsl/main/local/flake.nix | \
+curl -fsSL https://raw.githubusercontent.com/Avunu/nixos-wsl-micro/main/local/flake.nix | \
   sudo install -Dm644 /dev/stdin /etc/nixos/flake.nix && \
   sudo nixos-rebuild switch --flake /etc/nixos#nixos --impure
 ```
