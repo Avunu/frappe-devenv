@@ -22,8 +22,23 @@ The environment uses Nix flakes and devenv to declaratively manage:
 ### Prerequisites
 
 * [Nix](https://nixos.org/download.html) with flakes enabled
-* [devenv](https://devenv.sh/getting-started/)
 * [direnv](https://direnv.net/)
+
+#### Getting started with WSL on Windows
+
+If you aren't yet set up for running NixOS Flake-based software locally, the easiest route is to install NixOS on WSL and use the Avunu configuration.
+
+1. Enable/install NixOS WSL via the [Quickstart documentation](https://nix-community.github.io/NixOS-WSL/).
+2. Activate the [Avunu NixOS configuration](https://github.com/avunu/nixos-wsl) within the NixOS shell:
+
+```Shell
+curl -fsSL https://raw.githubusercontent.com/Avunu/nixos-wsl/main/local/flake.nix | \
+  sudo install -Dm644 /dev/stdin /etc/nixos/flake.nix && \
+  sudo nixos-rebuild switch --flake /etc/nixos#nixos --impure
+```
+
+3. Install the [WSL extension in VSCode](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl) to connect to the NixOS instance.
+4. After opening a NixOS session in VSCode, use the source control sidebar to clone this repository into the NixOS instance.
 
 ### Setup
 
