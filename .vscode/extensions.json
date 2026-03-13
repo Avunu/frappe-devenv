@@ -1,6 +1,8 @@
 {
     "recommendations": [
-		"mkhl.direnv",
+        "bbenoist.Nix",
+        "mkhl.direnv",
+        "ms-python.vscode-pylance",
         "mtxr.sqltools-driver-mysql",
         "mtxr.sqltools",
     ]
