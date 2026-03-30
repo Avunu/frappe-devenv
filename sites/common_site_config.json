@@ -6,6 +6,7 @@
 	"gunicorn_workers": 9,
 	"live_reload": true,
 	"maintenance_mode": 0,
+	"mariadb_root_password": "",
 	"pause_scheduler": 0,
 	"rebase_on_pull": false,
 	"redis_cache": "redis://localhost:13000",

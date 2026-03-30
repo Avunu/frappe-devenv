@@ -58,12 +58,11 @@ curl -fsSL https://raw.githubusercontent.com/Avunu/nixos-wsl-micro/main/local/fl
    devenv up
    ```
 
-4. Initialize a new Frappe site (root password is blank/unset):
+4. In another terminal, provision the default site (first time only):
    ```Shell
-   bench new-site frappe.localhost
-   bench --site frappe.localhost install-app erpnext
-   bench --site frappe.localhost install-app hrms
+   provision-site
    ```
+   This creates the `frappe.localhost` site and installs all workspace apps (erpnext, hrms, etc.). The default admin password is `admin` — pass a custom one with `provision-site mypassword`.
 
 5. Open the development site in your browser: <http://localhost:8000/>
 
@@ -75,6 +74,7 @@ Frappe apps are included as **git submodules** under the `apps/` directory (see 
 
 The devenv shell provides several convenience commands:
 
+* **`provision-site [admin-password]`** — Creates the default Frappe site and installs all workspace apps. Run once after `devenv up` on a fresh environment. Default admin password is `admin`.
 * **`bench-new-app <app-name>`** — Scaffolds a new Frappe app (wraps `bench new-app --no-git`), registers it in the uv workspace and `apps.txt`, syncs dependencies, and reloads the devenv. Use this instead of `bench new-app` which fails in the read-only Nix environment.
 * **`bench-get-app <url-or-alias>`** — Adds a new Frappe app by cloning it as a git submodule, registering it in the uv workspace, and syncing dependencies. Accepts a GitHub shorthand (e.g. `frappe/payments`) or a full git URL.
 * **`bench-restore <sql-file> [options]`** — Restores the local Frappe site from a SQL backup file, automatically supplying the database credentials from the environment.

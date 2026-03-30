@@ -883,6 +883,7 @@
                 FRAPPE_SOCKETS_DIR = config.env.DEVENV_STATE + "/sockets";
                 FRAPPE_WEB_SOCKET = config.env.DEVENV_STATE + "/sockets/frappe.sock";
                 # FRAPPE_SOCKETIO_UDS = config.env.DEVENV_STATE + "/sockets/socketio.sock";
+                MYSQL_ROOT_PASSWORD = ""; # Required by MySQL client libraries
 
                 # Bench root - using config.devenv.root
                 FRAPPE_BENCH_ROOT = config.devenv.root;
@@ -968,6 +969,9 @@
                 echo "╠════════════════════════════════════════════════════════════╣"
                 echo "║  Start all services:                                       ║"
                 echo "║    devenv up                                               ║"
+                echo "║                                                            ║"
+                echo "║  First time? After 'devenv up', in another terminal run:   ║"
+                echo "║    provision-site                                          ║"
                 echo "║                                                            ║"
                 echo "║  Default site: frappe.localhost                            ║"
                 echo "║                                                            ║"
@@ -1083,6 +1087,40 @@
               # Scripts (convenience commands)
               # ─────────────────────────────────────────────────────────────
               scripts = {
+
+                # Provision the default Frappe site from scratch.
+                # Requires services to be running (run `devenv up` first).
+                # Creates the site, then installs every app from sites/apps.txt.
+                #
+                # Usage: provision-site [admin-password]
+                provision-site.exec = ''
+                  set -euo pipefail
+                  cd "$FRAPPE_BENCH_ROOT"
+
+                  ADMIN_PASS="''${1:-admin}"
+
+                  echo "Creating site $FRAPPE_SITE..."
+                  bench new-site "$FRAPPE_SITE" \
+                    --db-type mariadb \
+                    --db-socket "$FRAPPE_DB_SOCKET" \
+                    --db-root-username root \
+                    --admin-password "$ADMIN_PASS" \
+                    --set-default \
+                    --force
+
+                  # Install every app listed in apps.txt (skip frappe — it's the framework)
+                  while IFS= read -r app; do
+                    [ -z "$app" ] && continue
+                    [ "$app" = "frappe" ] && continue
+                    echo "Installing app: $app"
+                    bench --site "$FRAPPE_SITE" install-app "$app"
+                  done < sites/apps.txt
+
+                  echo ""
+                  echo "✅ Site $FRAPPE_SITE provisioned!"
+                  echo "   Admin password: $ADMIN_PASS"
+                  echo "   URL: http://localhost:$FRAPPE_WEBSERVER_PORT"
+                '';
 
                 # Create a new Frappe app scaffold and integrate it into the workspace.
                 # Wraps `bench new-app --no-git` which will fail on the pip install
