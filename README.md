@@ -75,6 +75,7 @@ Frappe apps are included as **git submodules** under the `apps/` directory (see 
 
 The devenv shell provides several convenience commands:
 
+* **`bench-new-app <app-name>`** — Scaffolds a new Frappe app (wraps `bench new-app --no-git`), registers it in the uv workspace and `apps.txt`, syncs dependencies, and reloads the devenv. Use this instead of `bench new-app` which fails in the read-only Nix environment.
 * **`bench-get-app <url-or-alias>`** — Adds a new Frappe app by cloning it as a git submodule, registering it in the uv workspace, and syncing dependencies. Accepts a GitHub shorthand (e.g. `frappe/payments`) or a full git URL.
 * **`bench-restore <sql-file> [options]`** — Restores the local Frappe site from a SQL backup file, automatically supplying the database credentials from the environment.
 * **`update-deps`** — Re-locks and syncs both Python (uv) and Node (yarn) dependencies across all apps, then reminds you to commit the updated lock files.

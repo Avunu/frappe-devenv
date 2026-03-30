@@ -1008,17 +1008,17 @@
                   };
                 };
                 initialDatabases = [
-                  { name = "frappe"; } # Frappe site database
+                  { name = "_0edd63f3387bcb99"; } # Frappe site database
                 ];
-                # ensureUsers = [
-                #   {
-                #     name = "frappe-root";
-                #     password = "123";
-                #     ensurePermissions = {
-                #       "*.*" = "ALL PRIVILEGES";
-                #     };
-                #   }
-                # ];
+                ensureUsers = [
+                  {
+                    name = "_0edd63f3387bcb99";
+                    password = "6pXowDfwh6YQ8iRA";
+                    ensurePermissions = {
+                      "_0edd63f3387bcb99.*" = "ALL PRIVILEGES";
+                    };
+                  }
+                ];
               };
 
               # Redis via devenv's redis service
@@ -1083,6 +1083,73 @@
               # Scripts (convenience commands)
               # ─────────────────────────────────────────────────────────────
               scripts = {
+
+                # Create a new Frappe app scaffold and integrate it into the workspace.
+                # Wraps `bench new-app --no-git` which will fail on the pip install
+                # step (read-only Nix env), then wires up pyproject.toml, uv, and
+                # apps.txt so the app is properly recognised.
+                #
+                # Usage: bench-new-app <app-name>
+                bench-new-app.exec = ''
+                  if [ -z "$1" ]; then
+                    echo "Usage: bench-new-app <app-name>"
+                    echo ""
+                    echo "Creates a new Frappe app and integrates it into the devenv workspace."
+                    echo "This wraps 'bench new-app' to work around the read-only Nix environment."
+                    exit 1
+                  fi
+
+                  APP_NAME="$1"
+                  APP_DIR="apps/$APP_NAME"
+
+                  cd "$FRAPPE_BENCH_ROOT"
+
+                  if [ -d "$APP_DIR" ] && [ -f "$APP_DIR/pyproject.toml" ]; then
+                    echo "Error: App '$APP_NAME' already exists in $APP_DIR"
+                    exit 1
+                  fi
+
+                  echo ""
+                  echo "Creating app scaffold with 'bench new-app --no-git $APP_NAME'..."
+                  echo "⚠  The install step will fail (read-only Nix env) — this is expected."
+                  echo ""
+
+                  # Run bench new-app; ignore the expected pip install failure
+                  bench new-app --no-git "$APP_NAME" || true
+
+                  # Verify the scaffold was actually created
+                  if [ ! -f "$APP_DIR/pyproject.toml" ]; then
+                    echo "Error: App scaffold was not created at $APP_DIR"
+                    exit 1
+                  fi
+
+                  echo ""
+                  echo "Registering $APP_NAME in pyproject.toml workspace..."
+
+                  # Add to [tool.uv.workspace] members list
+                  sed -i "/^members = \[/,/^]/ { /^]/ i\    \"apps/$APP_NAME\"," pyproject.toml
+
+                  # Add to [tool.uv.sources] for workspace linking
+                  sed -i "/frappe = { workspace = true }/ a\\$APP_NAME = { workspace = true }" pyproject.toml
+
+                  echo "Adding $APP_NAME to sites/apps.txt..."
+                  if ! grep -q "^$APP_NAME$" sites/apps.txt; then
+                    echo "$APP_NAME" >> sites/apps.txt
+                  fi
+
+                  echo "Syncing Python dependencies..."
+                  uv sync
+
+                  echo ""
+                  echo "Reloading devenv (direnv)..."
+                  direnv reload
+
+                  echo ""
+                  echo "✅ App '$APP_NAME' created and integrated!"
+                  echo ""
+                  echo "Next steps:"
+                  echo "  bench --site $FRAPPE_SITE install-app $APP_NAME"
+                '';
 
                 # Add a new Frappe app from git URL or GitHub alias
                 # Usage: bench-get-app <url-or-alias>
