@@ -44,7 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/Avunu/nixos-wsl-micro/main/local/fl
 
 1. Clone the repository with submodules:
    ```Shell
-   git clone --recurse-submodules https://github.com/Avunu/frappe-devenv.git
+   git clone --recurse-submodules https://github.com/Avunu/frappe-devenv.git --depth 1
    cd frappe-devenv
    ```
 
