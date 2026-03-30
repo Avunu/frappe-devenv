@@ -271,8 +271,7 @@
           # No dev tools (ruff, mypy, semgrep, pytest, …).
           # Used by all OCI container images.
           prodPythonEnv = pythonSet.mkVirtualEnv "frappe-bench-prod-env" (
-            lib.filterAttrs (name: _: name != "frappe-bench-devenv") workspace.deps.default
-            // rootDepsAttr
+            lib.filterAttrs (name: _: name != "frappe-bench-devenv") workspace.deps.default // rootDepsAttr
           );
 
           # ── Development Python environment ──────────────────────────
@@ -502,21 +501,23 @@
             "FRAPPE_STREAM_LOGGING=1"
             "FRAPPE_TUNE_GC=1"
             "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-            "LD_LIBRARY_PATH=${lib.makeLibraryPath [
-              pkgs.zlib
-              pkgs.openssl
-              pkgs.libffi
-              pkgs.file.out
-              pkgs.mariadb.client
-              pkgs.cairo
-              pkgs.pango
-              pkgs.gdk-pixbuf
-              pkgs.harfbuzz
-              pkgs.fontconfig
-              pkgs.freetype
-              pkgs.libjpeg
-              pkgs.libpng
-            ]}"
+            "LD_LIBRARY_PATH=${
+              lib.makeLibraryPath [
+                pkgs.zlib
+                pkgs.openssl
+                pkgs.libffi
+                pkgs.file.out
+                pkgs.mariadb.client
+                pkgs.cairo
+                pkgs.pango
+                pkgs.gdk-pixbuf
+                pkgs.harfbuzz
+                pkgs.fontconfig
+                pkgs.freetype
+                pkgs.libjpeg
+                pkgs.libpng
+              ]
+            }"
           ];
 
           # Entrypoint for Frappe Python containers.
@@ -631,27 +632,47 @@
               "-"
               "frappe.app:application"
             ];
-            exposedPorts = { "8000/tcp" = { }; };
+            exposedPorts = {
+              "8000/tcp" = { };
+            };
           };
 
           # Scheduler: enqueues cron/scheduled jobs into Redis
           packages.scheduler = mkFrappeContainer {
             name = "frappe/scheduler";
-            cmd = [ "${prodPythonEnv}/bin/bench" "schedule" ];
+            cmd = [
+              "${prodPythonEnv}/bin/bench"
+              "schedule"
+            ];
           };
 
           # Background workers
           packages.worker-default = mkFrappeContainer {
             name = "frappe/worker-default";
-            cmd = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "default" ];
+            cmd = [
+              "${prodPythonEnv}/bin/bench"
+              "worker"
+              "--queue"
+              "default"
+            ];
           };
           packages.worker-short = mkFrappeContainer {
             name = "frappe/worker-short";
-            cmd = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "short" ];
+            cmd = [
+              "${prodPythonEnv}/bin/bench"
+              "worker"
+              "--queue"
+              "short"
+            ];
           };
           packages.worker-long = mkFrappeContainer {
             name = "frappe/worker-long";
-            cmd = [ "${prodPythonEnv}/bin/bench" "worker" "--queue" "long" ];
+            cmd = [
+              "${prodPythonEnv}/bin/bench"
+              "worker"
+              "--queue"
+              "long"
+            ];
           };
 
           # Socket.IO realtime bridge (:9000) — Node.js, not Python
@@ -668,7 +689,12 @@
                   cacert
                   nodejs_24
                 ];
-                pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                pathsToLink = [
+                  "/bin"
+                  "/lib"
+                  "/share"
+                  "/etc"
+                ];
               })
               benchRoot
             ];
@@ -679,7 +705,9 @@
                 "/bench/apps/frappe/socketio.js"
               ];
               WorkingDir = "/bench";
-              ExposedPorts = { "9000/tcp" = { }; };
+              ExposedPorts = {
+                "9000/tcp" = { };
+              };
               Env = [
                 "NODE_ENV=production"
                 "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
@@ -700,7 +728,12 @@
                   bashInteractive
                   nginx
                 ];
-                pathsToLink = [ "/bin" "/lib" "/share" "/etc" ];
+                pathsToLink = [
+                  "/bin"
+                  "/lib"
+                  "/share"
+                  "/etc"
+                ];
               })
               benchRoot
             ];
@@ -718,7 +751,9 @@
                 "daemon off;"
               ];
               WorkingDir = "/bench";
-              ExposedPorts = { "80/tcp" = { }; };
+              ExposedPorts = {
+                "80/tcp" = { };
+              };
             };
           };
 
@@ -726,7 +761,10 @@
           # docker run --rm -v sites:/bench/sites frappe/bench:latest bench --site X migrate
           packages.bench-cli = mkFrappeContainer {
             name = "frappe/bench";
-            cmd = [ "${prodPythonEnv}/bin/bench" "--help" ];
+            cmd = [
+              "${prodPythonEnv}/bin/bench"
+              "--help"
+            ];
             # nodejs_24 needed for bench build (esbuild); node_modules already
             # present in benchRoot via mkYarnPackage — no yarn install required.
             extraPaths = [ pkgs.nodejs_24 ];
@@ -735,7 +773,7 @@
           devenv.shells.default =
             { config, pkgs, ... }:
             {
-              dotenv.enable = true;
+              # dotenv.enable = true;
 
               # ─────────────────────────────────────────────────────────────
               # Packages
