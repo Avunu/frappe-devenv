@@ -774,6 +774,7 @@
             { config, pkgs, ... }:
             {
               # dotenv.enable = true;
+              process.manager.implementation = "process-compose";
 
               # ─────────────────────────────────────────────────────────────
               # Packages
@@ -1034,44 +1035,57 @@
               # Redis via devenv's redis service
               services.redis = {
                 enable = true;
-                port = 13000; # Cache port - we'll add more instances via processes
+                port = 13000; # Cache port
               };
 
               # Additional Redis instances and Frappe processes
               processes = {
                 # Frappe Web Server
-                web.exec = ''
-                  exec ${devPythonEnv}/bin/bench serve --port 8000
-                '';
+                web = {
+                  ports.http.allocate = 8000;
+                  exec = ''
+                    exec ${devPythonEnv}/bin/bench serve --port ${toString config.processes.web.ports.http.value}
+                  '';
+                };
 
                 # Frappe Scheduler
-                scheduler.exec = ''
-                  exec ${devPythonEnv}/bin/bench schedule
-                '';
+                scheduler = {
+                  exec = ''
+                    exec ${devPythonEnv}/bin/bench schedule
+                  '';
+                };
 
                 # Background Worker
-                worker.exec = ''
-                  exec ${devPythonEnv}/bin/bench worker
-                '';
+                worker = {
+                  exec = ''
+                    exec ${devPythonEnv}/bin/bench worker
+                  '';
+                };
 
                 # SocketIO Server
-                socketio.exec = ''
-                  rm -f "$DEVENV_STATE/sockets/socketio.sock"
-                  exec ${pkgs.nodejs_24}/bin/node apps/frappe/socketio.js
-                '';
+                socketio = {
+                  exec = ''
+                    rm -f "$DEVENV_STATE/sockets/socketio.sock"
+                    exec ${pkgs.nodejs_24}/bin/node apps/frappe/socketio.js
+                  '';
+                };
 
                 # File Watcher (for development auto-rebuild)
-                watch.exec = ''
-                  exec ${devPythonEnv}/bin/bench watch
-                '';
+                watch = {
+                  exec = ''
+                    exec ${devPythonEnv}/bin/bench watch
+                  '';
+                };
 
                 # Mailpit (development email server)
-                mailpit.exec = ''
-                  exec ${pkgs.mailpit}/bin/mailpit \
-                    --smtp 127.0.0.1:1025 \
-                    --listen 127.0.0.1:8025 \
-                    --database "$DEVENV_STATE/mailpit.db"
-                '';
+                mailpit = {
+                  exec = ''
+                    exec ${pkgs.mailpit}/bin/mailpit \
+                      --smtp 127.0.0.1:1025 \
+                      --listen 127.0.0.1:8025 \
+                      --database "$DEVENV_STATE/mailpit.db"
+                  '';
+                };
               };
 
               # Process dependencies
@@ -1264,7 +1278,7 @@
                   echo ""
                   echo "Next steps:"
                   echo "  1. Exit this shell: exit"
-                  echo "  2. Restart devenv: devenv shell"
+                  echo "  2. Restart devenv: direnv reload --refresh-eval-cache"
                   echo "  3. Run: bench --site frappe.localhost migrate"
                   echo "  4. Install the app: bench --site frappe.localhost install-app $APP_NAME"
                 '';
