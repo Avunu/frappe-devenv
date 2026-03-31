@@ -1,3 +1,51 @@
 {
-	"python.defaultInterpreterPath": "python"
+	"cSpell.words": [
+		"backflush",
+		"boms",
+		"dnpi",
+		"doclist",
+		"islocal",
+		"lenght",
+		"oprtation",
+		"optim",
+		"transfered",
+		"vattr",
+		"xcall"
+	],
+	"js/ts.tsdk.path": "${workspaceFolder}/apps/frappe/node_modules/typescript/lib",
+	"js/ts.tsserver.node.path": "node",
+	"npm.packageManager": "yarn",
+	"python-envs.defaultEnvManager": "ms-python.python:venv",
+	"python.defaultInterpreterPath": "${workspaceFolder}/env/bin/python",
+	"sqltools.connections": [
+		{
+			"database": "_0edd63f3387bcb99",
+			"driver": "MariaDB",
+			"mysqlOptions": {
+				"authProtocol": "default",
+				"enableSsl": "Disabled"
+			},
+			"name": "frappe.localhost",
+			"password": "6pXowDfwh6YQ8iRA",
+			"port": 3306,
+			"previewLimit": 50,
+			"server": "localhost",
+			"socketPath": "${workspaceFolder}/.devenv/run/mysql.sock",
+			"username": "_0edd63f3387bcb99"
+		},
+		{
+			"database": "hpiruk",
+			"driver": "MariaDB",
+			"mysqlOptions": {
+				"authProtocol": "default"
+			},
+			"name": "devcontainer",
+			"password": "123",
+			"port": 3306,
+			"previewLimit": 50,
+			"server": "mariadb",
+			"username": "root"
+		}
+	],
+	"sqltools.useNodeRuntime": true
 }
