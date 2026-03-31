@@ -963,6 +963,12 @@
                   '') appsWithNode
                 )}
 
+                # Check if Frappe assets are built, if not, build them
+                if [ ! -f "sites/assets/frappe/js/desk.bundle.js" ]; then
+                  echo "Building Frappe assets..."
+                  bench build
+                fi
+
                 echo ""
                 echo "╔════════════════════════════════════════════════════════════╗"
                 echo "║         frappe Frappe Bench Development Environment        ║"
@@ -1096,6 +1102,9 @@
                 provision-site.exec = ''
                   set -euo pipefail
                   cd "$FRAPPE_BENCH_ROOT"
+
+                  # tell the user to leave the root password prompt blank
+                  echo "⚠  When prompted for the MySQL root password, leave it blank and press Enter (hitting enter submits an empty password, which is correct)."
 
                   ADMIN_PASS="''${1:-admin}"
 
