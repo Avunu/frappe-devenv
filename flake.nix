@@ -82,6 +82,15 @@
           ) (rootPyproject.project.dependencies or [ ]);
           rootDepsAttr = lib.genAttrs rootDepNames (_: [ ]);
 
+          # Extract dev-group packages from the root [dependency-groups] section.
+          # These are flattened across all groups (only string entries; attrset
+          # {include-group=...} entries are ignored since they reference other groups
+          # that are already captured).
+          rootDevDepNames = map (
+            dep: lib.strings.toLower (builtins.head (builtins.match "([A-Za-z0-9_-]+).*" dep))
+          ) (lib.filter builtins.isString (lib.flatten (lib.attrValues (rootPyproject."dependency-groups" or { }))));
+          rootDevDepsAttr = lib.genAttrs rootDevDepNames (_: [ ]);
+
           # Create overlay from workspace
           overlay = workspace.mkPyprojectOverlay {
             sourcePreference = "wheel";
@@ -285,9 +294,21 @@
           # and gives proper __file__ paths, entry-point discovery,
           # and hot-reload support.
           editablePythonSet = pythonSet.overrideScope (
-            workspace.mkEditablePyprojectOverlay {
-              root = "$REPO_ROOT";
-            }
+            lib.composeManyExtensions [
+              (workspace.mkEditablePyprojectOverlay {
+                root = "$REPO_ROOT";
+              })
+              # hatchling's editable-wheel builder imports the `editables`
+              # package — provide it as a build input for packages that
+              # use hatchling (the workspace root in our case).
+              (final: prev: {
+                frappe-bench-devenv = prev.frappe-bench-devenv.overrideAttrs (old: {
+                  nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
+                    final.editables
+                  ];
+                });
+              })
+            ]
           );
 
           devPythonEnv = editablePythonSet.mkVirtualEnv "frappe-bench-dev-env" (
@@ -295,6 +316,7 @@
               workspace.deps.default // workspace.deps.groups
             )
             // rootDepsAttr
+            // rootDevDepsAttr
           );
 
           # Build PYTHONPATH from apps/ directories for production
