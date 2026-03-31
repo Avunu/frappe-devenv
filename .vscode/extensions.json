@@ -1,6 +1,8 @@
 {
     "recommendations": [
+        "astral-sh.ty",
         "bbenoist.Nix",
+        "charliermarsh.ruff",
         "mkhl.direnv",
         "ms-python.vscode-pylance",
         "mtxr.sqltools-driver-mysql",

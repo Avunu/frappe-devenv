@@ -1,17 +1,14 @@
 {
-	"cSpell.words": [
-		"backflush",
-		"boms",
-		"dnpi",
-		"doclist",
-		"islocal",
-		"lenght",
-		"oprtation",
-		"optim",
-		"transfered",
-		"vattr",
-		"xcall"
-	],
+	"[python]": {
+		"editor.codeActionsOnSave": {
+			// Optionally, enable all other auto-fixable problems on save
+			"source.fixAll.ruff": "explicit",
+			// Enable Ruff to organize imports on save
+			"source.organizeImports.ruff": "explicit"
+		},
+		"editor.defaultFormatter": "charliermarsh.ruff"
+	},
+	"editor.formatOnSave": true,
 	"js/ts.tsdk.path": "${workspaceFolder}/apps/frappe/node_modules/typescript/lib",
 	"js/ts.tsserver.node.path": "node",
 	"npm.packageManager": "yarn",

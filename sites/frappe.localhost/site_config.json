@@ -1,6 +1,12 @@
 {
  "allow_tests": true,
+ "db_name": "_0edd63f3387bcb99",
+ "db_password": "6pXowDfwh6YQ8iRA",
  "db_type": "mariadb",
+ "db_user": "_0edd63f3387bcb99",
  "developer_mode": 1,
- "mariadb_root_password": ""
+ "mariadb_root_password": "",
+ "user_type_doctype_limit": {
+  "employee_self_service": 40
+ }
 }
