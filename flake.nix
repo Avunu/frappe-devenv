@@ -39,7 +39,7 @@
         ];
 
         perSystem =
-          { pkgs, lib, ... }:
+          { pkgs, ... }:
           {
             frappe-nix = {
               enable = true;
@@ -63,130 +63,6 @@
               };
 
               containers.enable = true;
-
-              # Scripts not provided (or weaker) in frappe-nix/lib/scripts.nix.
-              # extraScripts is merged over the standard set, so a same-named key
-              # here overrides the built-in one.
-              extraScripts = {
-                # Scaffold a new app and wire it into the uv workspace + apps.txt.
-                # Not present in frappe-nix's standard script set.
-                bench-new-app = {
-                  exec = ''
-                    if [ -z "$1" ]; then
-                      echo "Usage: bench-new-app <app-name>"
-                      echo ""
-                      echo "Creates a new Frappe app and integrates it into the devenv workspace."
-                      echo "Wraps 'bench new-app' to work around the read-only Nix environment."
-                      exit 1
-                    fi
-
-                    APP_NAME="$1"
-                    APP_DIR="apps/$APP_NAME"
-
-                    cd "$FRAPPE_BENCH_ROOT"
-
-                    if [ -d "$APP_DIR" ] && [ -f "$APP_DIR/pyproject.toml" ]; then
-                      echo "Error: App '$APP_NAME' already exists in $APP_DIR"
-                      exit 1
-                    fi
-
-                    echo ""
-                    echo "Creating app scaffold with 'bench new-app --no-git $APP_NAME'..."
-                    echo "⚠  The install step will fail (read-only Nix env) — this is expected."
-                    echo ""
-
-                    bench new-app --no-git "$APP_NAME" || true
-
-                    if [ ! -f "$APP_DIR/pyproject.toml" ]; then
-                      echo "Error: App scaffold was not created at $APP_DIR"
-                      exit 1
-                    fi
-
-                    echo "Registering $APP_NAME in pyproject.toml workspace..."
-                    dasel put -f pyproject.toml -t string 'tool.uv.workspace.members.append()' "apps/$APP_NAME"
-                    dasel put -f pyproject.toml -t bool "tool.uv.sources.$APP_NAME.workspace" true
-
-                    echo "Adding $APP_NAME to sites/apps.txt..."
-                    if ! grep -q "^$APP_NAME$" sites/apps.txt; then
-                      echo "$APP_NAME" >> sites/apps.txt
-                    fi
-
-                    echo "Syncing Python dependencies..."
-                    uv sync
-
-                    echo ""
-                    echo "Reloading devenv (direnv)..."
-                    direnv reload
-
-                    echo ""
-                    echo "✅ App '$APP_NAME' created and integrated!"
-                    echo ""
-                    echo "Next steps:"
-                    echo "  bench --site $FRAPPE_SITE install-app $APP_NAME"
-                  '';
-                  packages = [ pkgs.dasel ];
-                  description = "Creates a new Frappe app scaffold and integrates it into the workspace.";
-                };
-
-                # Override frappe-nix's bench-get-app with the dasel variant that
-                # also edits pyproject.toml ([tool.uv.workspace] + [tool.uv.sources]).
-                bench-get-app = {
-                  exec = ''
-                    if [ -z "$1" ]; then
-                      echo "Usage: bench-get-app <url-or-alias>"
-                      echo ""
-                      echo "Adds a Frappe app as a git submodule and integrates it into the workspace."
-                      echo ""
-                      echo "Examples:"
-                      echo "  bench-get-app frappe/payments"
-                      echo "  bench-get-app https://github.com/frappe/payments.git"
-                      exit 1
-                    fi
-
-                    INPUT="$1"
-                    cd "$FRAPPE_BENCH_ROOT"
-
-                    if [[ "$INPUT" == */* ]] && [[ "$INPUT" != *://* ]]; then
-                      URL="https://github.com/$INPUT.git"
-                    else
-                      URL="$INPUT"
-                    fi
-
-                    APP_NAME=$(basename "$URL" .git)
-                    APP_DIR="apps/$APP_NAME"
-
-                    if [ -d "$APP_DIR" ]; then
-                      echo "Error: App '$APP_NAME' already exists in $APP_DIR"
-                      exit 1
-                    fi
-
-                    echo "Adding git submodule: $URL -> $APP_DIR"
-                    git submodule add "$URL" "$APP_DIR"
-                    git submodule update --init --recursive "$APP_DIR"
-
-                    echo "Adding $APP_NAME to pyproject.toml workspace members..."
-                    dasel put -f pyproject.toml -t string 'tool.uv.workspace.members.append()' "apps/$APP_NAME"
-                    dasel put -f pyproject.toml -t bool "tool.uv.sources.$APP_NAME.workspace" true
-
-                    echo "Adding $APP_NAME to sites/apps.txt..."
-                    if ! grep -q "^$APP_NAME$" sites/apps.txt; then
-                      echo "$APP_NAME" >> sites/apps.txt
-                    fi
-
-                    echo "Syncing Python dependencies..."
-                    uv sync
-
-                    echo ""
-                    echo "✅ App '$APP_NAME' added successfully!"
-                    echo ""
-                    echo "Next steps:"
-                    echo "  1. Restart devenv: direnv reload --no-eval-cache"
-                    echo "  2. Install the app: bench --site $FRAPPE_SITE install-app $APP_NAME"
-                  '';
-                  packages = [ pkgs.dasel ];
-                  description = "Adds a Frappe app from a git URL or GitHub alias as a git submodule and integrates it into the workspace.";
-                };
-              };
             };
           };
 

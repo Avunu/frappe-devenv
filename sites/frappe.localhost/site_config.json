@@ -5,6 +5,11 @@
  "db_type": "mariadb",
  "db_user": "_0edd63f3387bcb99",
  "developer_mode": 1,
+ "installed_apps": [
+  "frappe",
+  "erpnext",
+  "hrms"
+ ],
  "mariadb_root_password": "",
  "user_type_doctype_limit": {
   "employee_self_service": 40
