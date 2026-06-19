@@ -16,6 +16,42 @@ The environment uses Nix flakes and devenv to declaratively manage:
 * Node.js packages for frontend assets
 * Development tools (ruff, pytest, mypy, etc.)
 * Production container images for deployment
+* A production NixOS deployment (systemd services)
+
+## Architecture
+
+This repository is a **thin wrapper** around [frappe-nix](https://github.com/Avunu/frappe-nix),
+which holds all the reusable Nix infrastructure (the uv2nix Python environment,
+yarn `node_modules`, the `benchRoot` assembly, OCI container images, the devenv
+shell, the convenience scripts, and the NixOS service module).
+
+[flake.nix](flake.nix) just:
+
+1. imports `frappe-nix.flakeModules.default`,
+2. configures it through the `perSystem.frappe-nix.*` options (bench name, default
+   site, Python/Node versions, app-specific scripts), and
+3. defines a proof-of-concept `nixosConfigurations.frappe-demo` that consumes
+   `frappe-nix.nixosModules.default`.
+
+To hack on the modules and this wrapper together, override the input to your local
+checkout instead of the pinned GitHub revision:
+
+```Shell
+nix build .#prodPythonEnv --override-input frappe-nix path:../frappe-nix
+```
+
+### Production NixOS deployment (PoC)
+
+```Shell
+# Evaluate/build the demo system, or boot it in a VM:
+nix build .#nixosConfigurations.frappe-demo.config.system.build.toplevel
+nixos-rebuild build-vm --flake .#frappe-demo
+```
+
+The demo brings up `frappe-web` (gunicorn), `frappe-scheduler`,
+`frappe-worker-{default,short,long}`, and `frappe-socketio` as systemd units, with
+a local MariaDB + Redis and an nginx reverse proxy. Site creation/migration and
+asset builds remain operational steps (run `bench` against the deployed bench).
 
 ## Getting Started
 
