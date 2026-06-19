@@ -35,9 +35,15 @@ dev = [
 # Use uv's workspace feature to manage all apps together
 # Mark this as a virtual package - no wheel will be built
 package = false
-# frappe-bench pins click<8.3, but frappe develop needs click~=8.3.1.
-# The bench code works fine with 8.3.x (_check_nested_chain exists), so override.
-override-dependencies = ["click~=8.3.1"]
+# Resolve conflicts between frappe-bench (the CLI) and frappe (develop):
+#   - frappe-bench pins click<8.3, but frappe develop needs click~=8.3.1
+#     (the bench code works fine with 8.3.x — _check_nested_chain exists).
+#   - frappe-bench caps requests<2.34, but frappe develop needs requests>=2.34.2
+#     (the cap is conservative).
+override-dependencies = [
+  "click~=8.3.1",
+  "requests>=2.34.2",
+]
 
 # Build-time dependencies for packages that need them but don't declare them.
 # These are older Frappe/ERPNext transitive deps that predate PEP 517/518 and
