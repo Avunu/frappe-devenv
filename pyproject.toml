@@ -172,6 +172,7 @@ members = [
     "apps/frappe",
     "apps/erpnext",
     "apps/hrms",
+    "apps/helpdesk",
 ]
 
 [tool.uv.sources]
@@ -179,6 +180,7 @@ members = [
 frappe = { workspace = true }
 erpnext = { workspace = true }
 hrms = { workspace = true }
+helpdesk = {workspace = true}
 
 [build-system]
 requires = ["hatchling"]
