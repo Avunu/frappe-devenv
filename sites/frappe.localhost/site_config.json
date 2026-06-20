@@ -1,17 +1,11 @@
 {
- "allow_tests": true,
- "db_name": "_0edd63f3387bcb99",
- "db_password": "6pXowDfwh6YQ8iRA",
+ "db_name": "_b09a97ca36c7d579",
+ "db_password": "U7CqYZQ7iAcko0B4",
+ "db_socket": "/run/user/1000/devenv-7567770/mysql.sock",
  "db_type": "mariadb",
- "db_user": "_0edd63f3387bcb99",
- "developer_mode": 1,
+ "db_user": "_b09a97ca36c7d579",
  "installed_apps": [
   "frappe",
-  "erpnext",
-  "hrms"
- ],
- "mariadb_root_password": "",
- "user_type_doctype_limit": {
-  "employee_self_service": 40
- }
+  "erpnext"
+ ]
 }

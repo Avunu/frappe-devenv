@@ -53,14 +53,8 @@
                 { name = "_0edd63f3387bcb99"; }
               ];
 
-              # fetchYarnDeps offline-cache hashes (depend on each app's
-              # yarn.lock). Regenerate after updating an app: unset the entry,
-              # `nix build .#benchRoot`, copy the reported `got: sha256-…`.
-              nodeOfflineHashes = {
-                frappe = "sha256-NV6LX77aeEYFNbROkGkYcADOZAUl6C/c0eJh5BVpZx8=";
-                erpnext = "sha256-25VPD0K192AMYRmOHhMao6I3As/KW9LvulB/6zK2Wbk=";
-                hrms = "sha256-UFAEybvxz7uW26bz6JQ0VxQu8Tw08CdH7FjV6KaEfOk=";
-              };
+              # Per-app fetchYarnDeps hashes live in node-offline-hashes.json,
+              # kept current by `bench-update` (or `bench-update --node-hashes`).
 
               containers.enable = true;
             };
