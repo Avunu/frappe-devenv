@@ -15,3 +15,9 @@
 	url = https://github.com/frappe/erpnext.git
 	branch = develop
 	shallow = true
+
+[submodule "apps/erpnext_taskview"]
+	path = apps/erpnext_taskview
+	url = https://github.com/Avunu/erpnext_taskview.git
+	branch = main
+	shallow = true

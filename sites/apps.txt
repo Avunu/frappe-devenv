@@ -1,3 +1,4 @@
 frappe
 hrms
 erpnext
+erpnext_taskview

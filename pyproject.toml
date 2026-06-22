@@ -10,10 +10,7 @@ readme = "README.md"
 # frappe-bench provides the `bench` CLI used as the entrypoint in
 # containers; setuptools is needed at import time by several transitive
 # deps that use pkg_resources.
-dependencies = [
-    "frappe-bench>=5.29.0",
-    "setuptools>=80.10.2",
-]
+dependencies = ["frappe-bench>=5.29.0", "setuptools>=80.10.2"]
 
 # Dev-only tools — included in the devenv shell but excluded from
 # production container images to keep them lean.
@@ -35,22 +32,136 @@ dev = [
 # Use uv's workspace feature to manage all apps together
 # Mark this as a virtual package - no wheel will be built
 package = false
-# Packages that need setuptools as a build dependency but don't declare it
-extra-build-dependencies = { cairocffi = ["setuptools"] }
+# Packages that need setuptools as a build dependency but don't declare it.
+# uv2nix reads these and injects them as nativeBuildInputs in the Nix build.
+
+[tool.uv.extra-build-dependencies]
+backcall = ["setuptools"]
+backoff = ["setuptools"]
+barcodenumber = ["setuptools"]
+bleach-allowlist = ["setuptools"]
+braintree = ["setuptools"]
+cairocffi = ["setuptools", "cffi", "pycparser"]
+chardet = ["setuptools"]
+colorama = ["setuptools"]
+croniter = ["setuptools"]
+cssselect = ["setuptools"]
+cssselect2 = ["setuptools"]
+cssutils = ["setuptools"]
+dataclasses-json = ["setuptools"]
+decorator = ["setuptools"]
+docopt = ["setuptools"]
+dropbox = ["setuptools"]
+email-reply-parser = ["setuptools"]
+et-xmlfile = ["setuptools"]
+executing = ["setuptools"]
+filetype = ["setuptools"]
+getmac = ["setuptools"]
+gocardless-pro = ["setuptools"]
+googlemaps = ["setuptools"]
+gunicorn = ["setuptools"]
+hiredis = ["setuptools"]
+html5lib = ["setuptools"]
+httplib2 = ["setuptools"]
+jellyfish = ["setuptools"]
+jsonpath-ng = ["setuptools"]
+ldap3 = ["setuptools"]
+markdown2 = ["setuptools"]
+markdownify = ["setuptools"]
+marshmallow = ["setuptools"]
+matplotlib-inline = ["setuptools"]
+maxminddb-geolite2 = ["setuptools"]
+maxminddb = ["setuptools"]
+monotonic = ["setuptools"]
+num2words = ["setuptools"]
+oauthlib = ["setuptools"]
+openpyxl = ["setuptools"]
+parso = ["setuptools"]
+passlib = ["setuptools"]
+paytmchecksum = ["setuptools"]
+pdfkit = ["setuptools"]
+pexpect = ["setuptools"]
+phonenumbers = ["setuptools"]
+pickleshare = ["setuptools"]
+plaid-python = ["setuptools"]
+ply = ["setuptools"]
+polyline = ["setuptools"]
+posthog = ["setuptools"]
+premailer = ["setuptools"]
+prompt-toolkit = ["setuptools"]
+psutil = ["setuptools"]
+ptyprocess = ["setuptools"]
+pure-eval = ["setuptools"]
+pyasn1-modules = ["setuptools"]
+pyasn1 = ["setuptools"]
+pycountry = ["setuptools"]
+pycryptodome = ["setuptools"]
+pydyf = ["setuptools"]
+pyjwt = ["setuptools"]
+pymysql = ["setuptools"]
+pyopenssl = ["setuptools"]
+pyotp = ["setuptools"]
+pyparsing = ["setuptools"]
+pypdf = ["setuptools"]
+pyphen = ["setuptools"]
+pypika = ["setuptools"]
+pypng = ["setuptools"]
+pyqrcode = ["setuptools"]
+python-barcode = ["setuptools"]
+python-docx = ["setuptools"]
+python-ldap = ["setuptools"]
+python-magic = ["setuptools"]
+python-pptx = ["setuptools"]
+python-stdnum = ["setuptools"]
+python-youtube = ["setuptools"]
+pytz = ["setuptools"]
+rapidfuzz = ["setuptools"]
+rauth = ["setuptools"]
+razorpay = ["setuptools"]
+redis = ["setuptools"]
+requests-oauthlib = ["setuptools"]
+responses = ["setuptools"]
+restrictedpython = ["setuptools"]
+rq = ["setuptools"]
+rsa = ["setuptools"]
+ruamel-yaml-clib = ["setuptools"]
+six = ["setuptools"]
+soupsieve = ["setuptools"]
+sql-metadata = ["setuptools"]
+sqlparse = ["setuptools"]
+stack-data = ["setuptools"]
+stone = ["setuptools"]
+stripe = ["setuptools"]
+tenacity = ["setuptools"]
+terminaltables = ["setuptools"]
+tinycss2 = ["setuptools"]
+tinyhtml5 = ["setuptools"]
+traceback-with-variables = ["setuptools"]
+traitlets = ["setuptools"]
+typing-inspect = ["setuptools"]
+unidecode = ["setuptools"]
+uritemplate = ["setuptools"]
+us = ["setuptools"]
+vobject = ["setuptools"]
+wcwidth = ["setuptools"]
+weasyprint = ["setuptools"]
+webencodings = ["setuptools"]
+whoosh = ["setuptools"]
+xlrd = ["setuptools"]
+xmltodict = ["setuptools"]
+zopfli = ["setuptools"]
+zxcvbn = ["setuptools"]
 # frappe-bench pins click<8.3, but frappe develop needs click~=8.3.1.
 # The bench code works fine with 8.3.x (_check_nested_chain exists), so override.
-override-dependencies = ["click~=8.3.1"]
+override-dependencies = ["click~=8.3.1", "pydantic>=2.12.5"]
 
 [tool.uv.workspace]
-members = [
-    "apps/frappe",
-    "apps/erpnext",
-    "apps/hrms",
-]
+members = ["apps/frappe", "apps/erpnext", "apps/hrms", "apps/erpnext_taskview"]
 
 [tool.uv.sources]
 # Link workspace members as editable installs
 frappe = { workspace = true }
+erpnext_taskview = { workspace = true }
 erpnext = { workspace = true }
 hrms = { workspace = true }
 
@@ -62,13 +173,23 @@ build-backend = "hatchling.build"
 # This is a virtual package - workspace root only
 skip-excluded-dirs = true
 
+[tool.ty.environment]
+extra-paths = [
+    "apps/erpnext",
+    "apps/erpnext_taskview",
+    "apps/frappe",
+    "apps/hrms",
+    "apps/library_management",
+]
+python = "./env"
+
 [tool.ruff]
 line-length = 110
 target-version = "py314"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
-ignore = ["E501"]  # Line length handled by formatter
+ignore = ["E501"]             # Line length handled by formatter
 
 [tool.mypy]
 python_version = "3.14"
