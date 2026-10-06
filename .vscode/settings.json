@@ -23,7 +23,7 @@
 				"enableSsl": "Disabled"
 			},
 			"name": "frappe.localhost",
-			"password": "6pXowDfwh6YQ8iRA",
+			"askForPassword": true,
 			"port": 3306,
 			"previewLimit": 50,
 			"server": "localhost",
@@ -37,7 +37,7 @@
 				"authProtocol": "default"
 			},
 			"name": "devcontainer",
-			"password": "123",
+			"askForPassword": true,
 			"port": 3306,
 			"previewLimit": 50,
 			"server": "mariadb",

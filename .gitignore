@@ -32,7 +32,8 @@ config/pids/*
 env
 logs/*
 node_modules
-pequea_bench/
 queue.rdb
 result
 sites/assets/*
+# Per-site config holds database credentials and encryption keys; never commit it.
+sites/*/site_config.json

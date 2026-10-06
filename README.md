@@ -1,3 +1,13 @@
+> **Superseded by [frappe-nix](https://github.com/Avunu/frappe-nix): a reusable flake-parts module that gives you the devenv shell, reproducible uv2nix Python and yarn `node_modules` environments, a built bench, OCI container images, a multi-tenant NixOS module and a scaffolding command (`nix run github:Avunu/frappe-nix`) that creates or migrates a bench for you. This repository is kept for reference and may be archived.**
+>
+> This repository is no longer the place to start a new bench. The infrastructure that used to live here was moved upstream into frappe-nix; what remains is a thin wrapper that consumes it, which frappe-nix still points to as its reference consumer.
+
+## Migrating
+
+* **New bench:** run `nix run github:Avunu/frappe-nix` (interactive, or pass `--frappe-version`, `--apps` and `--name`) instead of cloning this repository.
+* **Existing bench (including a clone of this repository):** run the same command from inside the bench directory. It detects the bench and migrates it in place; it only adds what is missing and never deletes anything.
+* **Staying on this repository:** nothing breaks. [flake.nix](flake.nix) already pulls everything from `github:Avunu/frappe-nix`, so updates to the tooling arrive through that input.
+
 # [devenv](https://github.com/cachix/devenv)-managed [Frappe](https://github.com/frappe/frappe) Bench
 
 A declarative Frappe developer environment, providing reproducible development and production environments for Frappe sites and applications.
