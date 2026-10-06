@@ -36,4 +36,4 @@ queue.rdb
 result
 sites/assets/*
 # Per-site config holds database credentials and encryption keys; never commit it.
-sites/*/site_config.json
+**/sites/*/site_config.json
